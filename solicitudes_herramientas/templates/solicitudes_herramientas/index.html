@@ -1,0 +1,102 @@
+{% extends 'base/base.html' %}
+{% load permisos_tags %}
+
+{% block contenido %}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold">
+            Solicitudes de Herramientas
+        </h2>
+
+        <a href="{% url 'nueva_solicitud_herramienta' %}" class="btn btn-primary">
+            ➕ Nueva Solicitud
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Estudiante</th>
+                <th>Carrera</th>
+                <th>Herramienta</th>
+                <th>Cantidad</th>
+                <th>Profesor</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+
+        <tbody>
+        {% for s in solicitudes %}
+            <tr>
+                <td>{{ s.estudiante }}</td>
+                <td>{{ s.carrera }}</td>
+                <td>{{ s.herramienta }}</td>
+                <td>{{ s.cantidad }}</td>
+                <td>{{ s.profesor }}</td>
+                <td>{{ s.estado }}</td>
+                <td>
+                    <div class="d-flex gap-1 flex-wrap">
+                        <a href="{% url 'exportar_pdf_solicitud_herramienta' s.id %}" class="btn btn-outline-primary btn-sm">
+                            📄 PDF
+                        </a>
+
+                        {% if not request.user|is_student %}
+                            <a href="{% url 'editar_solicitud_herramienta' s.id %}" class="btn btn-warning btn-sm">
+                                Editar
+                            </a>
+
+                            <form action="{% url 'aprobar_solicitud_herramienta' s.id %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    Aprobar
+                                </button>
+                            </form>
+
+                            <form action="{% url 'rechazar_solicitud_herramienta' s.id %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-secondary btn-sm">
+                                    Rechazar
+                                </button>
+                            </form>
+
+                            <form action="{% url 'devolver_herramienta' s.id %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-info btn-sm text-white">
+                                    Devolver
+                                </button>
+                            </form>
+
+                            <form action="{% url 'eliminar_solicitud_herramienta' s.id %}" method="post" class="d-inline" onsubmit="return confirm('¿Eliminar solicitud?')">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    Eliminar
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="7" class="text-center">
+                    No existen solicitudes registradas.
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+{% endblock %}

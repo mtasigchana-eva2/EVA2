@@ -1,0 +1,27 @@
+{% extends 'base/base.html' %}
+
+{% block contenido %}
+
+<div class="container">
+
+<h2>Nueva Solicitud</h2>
+
+<hr>
+
+<form method="POST">
+
+{% csrf_token %}
+
+{{ formulario.as_p }}
+
+<button class="btn btn-success">
+
+Guardar Solicitud
+
+</button>
+
+</form>
+
+</div>
+
+{% endblock %}

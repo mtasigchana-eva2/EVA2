@@ -1,0 +1,25 @@
+{% extends 'base/base.html' %}
+
+{% block contenido %}
+
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4>{% if solicitud %}✏️ Editar Solicitud de Equipo{% else %}💻 Nueva Solicitud de Equipo{% endif %}</h4>
+        </div>
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ formulario.as_p }}
+                <button class="btn btn-success">
+                    💾 Guardar
+                </button>
+                <a href="{% url 'lista_solicitudes_equipos' %}" class="btn btn-secondary">
+                    Cancelar
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

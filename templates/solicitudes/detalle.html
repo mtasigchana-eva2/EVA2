@@ -1,0 +1,92 @@
+{% extends 'base/base.html' %}
+{% load permisos_tags %}
+
+{% block contenido %}
+
+<div class="container mt-4">
+
+    <h2>Detalle de la Solicitud</h2>
+
+    <hr>
+
+    <table class="table table-bordered">
+
+        <tr>
+            <th>Estudiante</th>
+            <td>{{ solicitud.estudiante }}</td>
+        </tr>
+
+        <tr>
+            <th>Carrera</th>
+            <td>{{ solicitud.carrera }}</td>
+        </tr>
+
+        <tr>
+            <th>Sede</th>
+            <td>{{ solicitud.sede }}</td>
+        </tr>
+
+        <tr>
+            <th>Materia</th>
+            <td>{{ solicitud.materia }}</td>
+        </tr>
+
+        <tr>
+            <th>Docente</th>
+            <td>{{ solicitud.docente }}</td>
+        </tr>
+
+        <tr>
+            <th>Tipo</th>
+            <td>{{ solicitud.tipo }}</td>
+        </tr>
+
+        <tr>
+            <th>Motivo</th>
+            <td>{{ solicitud.motivo }}</td>
+        </tr>
+
+        <tr>
+            <th>Fecha</th>
+            <td>{{ solicitud.fecha }}</td>
+        </tr>
+
+        <tr>
+            <th>Estado</th>
+            <td>{{ solicitud.estado }}</td>
+        </tr>
+
+        <tr>
+            <th>Observación</th>
+            <td>{{ solicitud.observacion }}</td>
+        </tr>
+
+    </table>
+
+    <div class="d-flex gap-2">
+        {% if not request.user|is_student %}
+            <a href="{% url 'aprobar_solicitud' solicitud.id %}"
+               class="btn btn-success">
+                Aprobar
+            </a>
+
+            <a href="{% url 'rechazar_solicitud' solicitud.id %}"
+               class="btn btn-danger">
+                Rechazar
+            </a>
+        {% endif %}
+
+        <!-- BOTÓN DE DESCARGA DE PDF -->
+        <a href="{% url 'exportar_pdf_solicitud' solicitud.id %}" class="btn btn-primary">
+            📄 Descargar PDF
+        </a>
+
+        <a href="{% url 'lista_solicitudes' %}"
+           class="btn btn-secondary">
+            Volver
+        </a>
+    </div>
+
+</div>
+
+{% endblock %}

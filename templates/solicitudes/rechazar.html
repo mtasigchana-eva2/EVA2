@@ -1,0 +1,50 @@
+{% extends 'base/base.html' %}
+
+{% block contenido %}
+
+<div class="container mt-4">
+
+    <h2>Rechazar Solicitud</h2>
+
+    <hr>
+
+    <form method="POST">
+
+        {% csrf_token %}
+
+        <div class="mb-3">
+
+            <label class="form-label">
+
+                Motivo del rechazo
+
+            </label>
+
+            <textarea
+                name="observacion"
+                class="form-control"
+                rows="5"
+                required>
+            </textarea>
+
+        </div>
+
+        <button
+            class="btn btn-danger">
+
+            Guardar Rechazo
+
+        </button>
+
+        <a href="{% url 'lista_solicitudes' %}"
+           class="btn btn-secondary">
+
+            Cancelar
+
+        </a>
+
+    </form>
+
+</div>
+
+{% endblock %}

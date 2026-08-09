@@ -1,0 +1,100 @@
+{% extends 'base/base.html' %}
+{% load permisos_tags %}
+
+{% block contenido %}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold">Gestión de Herramientas</h2>
+        <a href="{% url 'nueva_herramienta' %}" class="btn btn-primary">
+            ➕ Nueva Herramienta
+        </a>
+    </div>
+
+    <!-- Formulario de búsqueda -->
+    <form method="GET" class="row mb-3">
+        <div class="col-md-5">
+            <input
+                type="text"
+                name="buscar"
+                class="form-control"
+                value="{{ buscar|default:'' }}"
+                placeholder="Buscar herramienta...">
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100">
+                🔍 Buscar
+            </button>
+        </div>
+        <div class="col-md-2">
+            <a href="{% url 'lista_herramientas' %}" class="btn btn-secondary w-100">
+                Limpiar
+            </a>
+        </div>
+    </form>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Código</th>
+                <th>Número Serie</th>
+                <th>Marca</th>
+                <th>Modelo</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for h in herramientas %}
+            <tr>
+                <td>{{ h.codigo }}</td>
+                <td>{{ h.numero_serie }}</td>
+                <td>{{ h.marca }}</td>
+                <td>{{ h.modelo }}</td>
+                <td>{{ h.estado }}</td>
+                <td>
+                    {% if request.user|can_edit_inventory %}
+                        <a href="{% url 'editar_herramienta' h.id %}" class="btn btn-warning btn-sm">
+                            Editar
+                        </a>
+                    {% endif %}
+
+                    {% if request.user|can_delete_inventory %}
+                        <a href="{% url 'eliminar_herramienta' h.id %}"
+                           class="btn btn-danger btn-sm"
+                           onclick="return confirm('¿Eliminar herramienta?')">
+                            Eliminar
+                        </a>
+                    {% endif %}
+
+                    {% if not request.user|can_edit_inventory and not request.user|can_delete_inventory %}
+                        <span class="text-muted small">Sin acciones</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="6" class="text-center">
+                    {% if buscar %}
+                        No se encontraron herramientas.
+                    {% else %}
+                        No existen herramientas registradas.
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+{% endblock %}

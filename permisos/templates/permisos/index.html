@@ -1,0 +1,108 @@
+{% extends 'base/base.html' %}
+{% load permisos_tags %}
+
+{% block contenido %}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold">
+            📄 Solicitudes de Permiso
+        </h2>
+
+        <a href="{% url 'nuevo_permiso' %}" class="btn btn-primary">
+            ➕ Nueva Solicitud
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Estudiante</th>
+                    <th>Carrera</th>
+                    <th>Docente</th>
+                    <th>Desde</th>
+                    <th>Hasta</th>
+                    <th>Estado</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for p in permisos %}
+                <tr>
+                    <td>{{ p.estudiante }}</td>
+                    <td>{{ p.carrera }}</td>
+                    <td>{{ p.docente }}</td>
+                    <td>{{ p.fecha_inicio }}</td>
+                    <td>{{ p.fecha_fin }}</td>
+                    <td>
+                        {% if p.estado == "Pendiente" or p.estado == "PENDIENTE" %}
+                            <span class="badge bg-warning text-dark">Pendiente</span>
+                        {% elif p.estado == "Aprobado" or p.estado == "Aprobada" %}
+                            <span class="badge bg-success">Aprobado</span>
+                        {% elif p.estado == "Rechazado" or p.estado == "Rechazada" %}
+                            <span class="badge bg-danger">Rechazado</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ p.estado }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex gap-1 justify-content-center flex-wrap align-items-center">
+
+                            <!-- Descargar PDF: disponible para todos -->
+                            <a href="{% url 'exportar_pdf_permiso' p.id %}" class="btn btn-outline-primary btn-sm">
+                                📄 PDF
+                            </a>
+
+                            <!-- Acciones para los 5 roles (NO estudiantes) -->
+                            {% if not request.user|is_student %}
+                                
+                                <!-- Botones para APROBAR y RECHAZAR directamente -->
+                                <a href="{% url 'editar_permiso' p.id %}?estado=Aprobado" class="btn btn-success btn-sm">
+                                    ✅ Aprobar
+                                </a>
+
+                                <a href="{% url 'editar_permiso' p.id %}?estado=Rechazado" class="btn btn-danger btn-sm">
+                                    ❌ Rechazar
+                                </a>
+
+                                <!-- Editar -->
+                                <a href="{% url 'editar_permiso' p.id %}" class="btn btn-warning btn-sm">
+                                    ✏️ Editar
+                                </a>
+
+                                <!-- Eliminar -->
+                                <a href="{% url 'eliminar_permiso' p.id %}"
+                                   class="btn btn-danger btn-sm"
+                                   onclick="return confirm('¿Eliminar solicitud?')">
+                                    🗑️ Eliminar
+                                </a>
+
+                            {% endif %}
+
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">
+                        No existen solicitudes registradas.
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+{% endblock %}

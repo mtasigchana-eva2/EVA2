@@ -1,0 +1,86 @@
+{% extends 'base/base.html' %}
+{% load permisos_tags %}
+
+{% block contenido %}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold">🧪 Solicitudes de Laboratorio</h2>
+
+        <a href="{% url 'nueva_solicitud' %}" class="btn btn-primary">
+            ➕ Nueva Solicitud de Laboratorio
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-info">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <hr>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Estudiante</th>
+                    <th>Fecha</th>
+                    <th>Horario</th>
+                    <th>Estado</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for s in solicitudes %}
+                <tr>
+                    <td>{{ s.estudiante }}</td>
+                    <td>{{ s.fecha }}</td>
+                    <td>{{ s.hora_inicio }} - {{ s.hora_fin }}</td>
+                    <td>
+                        {% if s.estado == "Pendiente" %}
+                            <span class="badge bg-warning text-dark">Pendiente</span>
+                        {% elif s.estado == "Aprobada" %}
+                            <span class="badge bg-success">Aprobada</span>
+                        {% else %}
+                            <span class="badge bg-danger">Rechazada</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex gap-2 justify-content-center align-items-center flex-wrap">
+                            <!-- Botón Ver disponible siempre -->
+                            <a href="{% url 'detalle_solicitud' s.id %}" class="btn btn-info btn-sm text-white">
+                                👁️ Ver
+                            </a>
+
+                            <!-- Botones Aprobar y Rechazar directamente afuera -->
+                            {% if request.user.is_superuser or not request.user.perfil or request.user.perfil.rol != 'Estudiante' %}
+                                {% if s.estado == "Pendiente" %}
+                                    <a href="{% url 'aprobar_solicitud' s.id %}" class="btn btn-success btn-sm">
+                                        ✅ Aprobar
+                                    </a>
+                                    <a href="{% url 'rechazar_solicitud' s.id %}" class="btn btn-danger btn-sm">
+                                        ❌ Rechazar
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">
+                        No existen solicitudes de laboratorio registradas.
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+{% endblock %}

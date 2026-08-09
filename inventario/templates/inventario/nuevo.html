@@ -1,0 +1,83 @@
+{% extends 'base/base.html' %}
+
+{% block contenido %}
+
+<div class="container mt-4">
+
+<div class="card shadow">
+
+<div class="card-header bg-primary text-white">
+
+<h3>Registrar Equipo / Herramienta</h3>
+
+</div>
+
+<div class="card-body">
+
+<form method="POST">
+
+{% csrf_token %}
+
+<div class="row">
+
+<div class="col-md-4 mb-3">
+<label>Código</label>
+{{ formulario.codigo }}
+</div>
+
+<div class="col-md-8 mb-3">
+<label>Nombre</label>
+{{ formulario.nombre }}
+</div>
+
+<div class="col-md-6 mb-3">
+<label>Categoría</label>
+{{ formulario.categoria }}
+</div>
+
+<div class="col-md-6 mb-3">
+<label>Carrera</label>
+{{ formulario.carrera }}
+</div>
+
+<div class="col-md-6 mb-3">
+<label>Sede</label>
+{{ formulario.sede }}
+</div>
+
+<div class="col-md-3 mb-3">
+<label>Cantidad</label>
+{{ formulario.cantidad }}
+</div>
+
+<div class="col-md-3 mb-3">
+<label>Estado</label>
+{{ formulario.estado }}
+</div>
+
+<div class="col-md-12 mb-3">
+<label>Observación</label>
+{{ formulario.observacion }}
+</div>
+
+</div>
+
+<hr>
+
+<button class="btn btn-success">
+💾 Guardar
+</button>
+
+<a href="{% url 'lista_inventario' %}" class="btn btn-secondary">
+Cancelar
+</a>
+
+</form>
+
+</div>
+
+</div>
+
+</div>
+
+{% endblock %}

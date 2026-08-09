@@ -1,0 +1,62 @@
+<header class="p-3 text-white" style="background:#0056A6;">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+        <!-- Título e Identificación del Sistema -->
+        <div>
+            <h3 class="m-0">EVA2</h3>
+            <small>Sistema Institucional</small>
+        </div>
+
+        <!-- Sección Derecha: Notificaciones + Usuario -->
+        <div class="d-flex align-items-center">
+            
+            <!-- Menú Desplegable de Notificaciones -->
+            <div class="dropdown me-3">
+                <a class="btn btn-outline-light position-relative dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    🔔 Notificaciones
+                    {% if notificaciones_no_leidas_count > 0 %}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            {{ notificaciones_no_leidas_count }}
+                        </span>
+                    {% endif %}
+                </a>
+
+                <ul class="dropdown-menu dropdown-menu-end shadow p-2" style="width: 320px; max-height: 400px; overflow-y: auto;">
+                    <li class="d-flex justify-content-between align-items-center mb-2 px-2">
+                        <strong class="text-dark">Notificaciones</strong>
+                        {% if notificaciones_no_leidas_count > 0 %}
+                            <a href="{% url 'marcar_todas_leidas' %}" class="btn btn-link btn-sm text-decoration-none p-0">Marcar leídas</a>
+                        {% endif %}
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+
+                    {% for n in ultimas_notificaciones %}
+                        <li class="mb-1">
+                            <a href="{% url 'marcar_como_leida' n.id %}" class="dropdown-item rounded p-2 {% if not n.leido %}bg-light fw-bold{% endif %}">
+                                <small class="text-muted d-block">{{ n.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                                <div class="text-truncate">{{ n.titulo }}</div>
+                                <small class="text-secondary d-block text-truncate">{{ n.mensaje }}</small>
+                            </a>
+                        </li>
+                    {% empty %}
+                        <li class="text-center text-muted py-2">No tienes notificaciones</li>
+                    {% endfor %}
+
+                    <li><hr class="dropdown-divider"></li>
+                    <li class="text-center">
+                        <a href="{% url 'lista_notificaciones' %}" class="btn btn-sm btn-primary w-100">Ver todas</a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Información del Usuario -->
+            <div class="text-end">
+                👤 <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+                <br>
+                <span class="badge bg-light text-dark">
+                    {{ request.user.perfil.get_rol_display|default:request.user.perfil.rol }}
+                </span>
+            </div>
+
+        </div>
+    </div>
+</header>

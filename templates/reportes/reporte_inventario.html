@@ -1,0 +1,112 @@
+{% extends 'base/base.html' %}
+
+{% block contenido %}
+
+<div class="container mt-4">
+
+    <h2>
+        📦 Reporte de Inventario
+    </h2>
+
+    <div class="mb-4">
+        <a href="{% url 'exportar_inventario_pdf' %}" class="btn btn-danger">
+            📄 Exportar PDF
+        </a>
+
+        <button onclick="window.print()" class="btn btn-dark">
+            🖨 Imprimir
+        </button>
+    </div>
+
+    <hr>
+
+    <input
+        type="text"
+        id="buscar"
+        class="form-control mb-3"
+        placeholder="Buscar inventario..."
+    >
+
+    <table class="table table-striped table-hover" id="tabla">
+
+        <thead class="table-dark">
+
+            <tr>
+
+                <th>ID</th>
+
+                <th>Nombre</th>
+
+                <th>Categoría</th>
+
+                <th>Cantidad</th>
+
+                <th>Estado</th>
+
+                <th>Sede</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            {% for item in inventario %}
+
+            <tr>
+
+                <td>{{ item.id }}</td>
+
+                <td>{{ item.nombre }}</td>
+
+                <td>{{ item.categoria }}</td>
+
+                <td>{{ item.cantidad }}</td>
+
+                <td>{{ item.estado }}</td>
+
+                <td>{{ item.sede }}</td>
+
+            </tr>
+
+            {% empty %}
+
+            <tr>
+
+                <td colspan="6" class="text-center">
+
+                    No existen registros.
+
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+<script>
+
+document.getElementById("buscar").addEventListener("keyup", function(){
+
+    let filtro = this.value.toLowerCase();
+
+    let filas = document.querySelectorAll("#tabla tbody tr");
+
+    filas.forEach(function(fila){
+
+        fila.style.display = fila.innerText.toLowerCase().includes(filtro)
+            ? ""
+            : "none";
+
+    });
+
+});
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends 'base/base.html' %}
+
+{% block contenido %}
+
+<div class="container py-4">
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if perfil_incompleto %}
+        <div class="alert alert-warning">
+            <strong>⚠ Perfil Incompleto:</strong> Recuerda subir tu fotografía y completar tus datos personales.
+        </div>
+    {% endif %}
+
+    <div class="row">
+
+        <!-- FICHA INSTITUCIONAL -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow text-center p-3">
+                <div class="mb-3">
+                    {% if request.user.perfil.foto %}
+                        <img src="{{ request.user.perfil.foto.url }}" class="rounded-circle img-thumbnail" style="width:160px; height:160px; object-fit:cover;">
+                    {% else %}
+                        <div class="rounded-circle bg-secondary text-white d-inline-flex justify-content-center align-items-center" style="width:160px; height:160px; font-size:60px;">
+                            👤
+                        </div>
+                    {% endif %}
+                </div>
+                <h4>{{ request.user.get_full_name|default:request.user.username }}</h4>
+                <p class="text-primary fw-bold mb-1">{{ request.user.perfil.rol }}</p>
+                <p class="text-muted small">{{ request.user.email }}</p>
+
+                <hr>
+
+                <div class="text-start small">
+                    <p class="mb-1"><strong>Carrera:</strong> {{ request.user.perfil.carrera|default:"No asignada" }}</p>
+                    <p class="mb-1"><strong>Sede:</strong> {{ request.user.perfil.sede|default:"No asignada" }}</p>
+                    <p class="mb-1"><strong>Teléfono:</strong> {{ request.user.perfil.telefono|default:"Sin registrar" }}</p>
+                    <p class="mb-1"><strong>Dirección:</strong> {{ request.user.perfil.direccion|default:"Sin registrar" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- FORMULARIO DE EDICIÓN -->
+        <div class="col-md-8">
+            <div class="card shadow p-4">
+                <h4 class="card-title mb-4">Editar Datos Personales</h4>
+                
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <h5 class="text-secondary">Información Básica</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombres</label>
+                            {{ u_form.first_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Apellidos</label>
+                            {{ u_form.last_name }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Correo Electrónico</label>
+                        {{ u_form.email }}
+                    </div>
+
+                    <hr>
+                    <h5 class="text-secondary">Información Institucional y Contacto</h5>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Fotografía</label>
+                            {{ p_form.foto }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Teléfono</label>
+                            {{ p_form.telefono }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Carrera</label>
+                            {{ p_form.carrera }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Sede</label>
+                            {{ p_form.sede }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Fecha Nacimiento</label>
+                            {{ p_form.fecha_nacimiento }}
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Edad</label>
+                            {{ p_form.edad }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Dirección</label>
+                            {{ p_form.direccion }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Descripción / Observaciones</label>
+                        {{ p_form.descripcion }}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        💾 Guardar Cambios en mi Perfil
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

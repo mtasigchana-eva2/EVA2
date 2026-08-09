@@ -1,0 +1,169 @@
+{% extends 'base/base.html' %}
+
+{% block contenido %}
+
+<div class="container mt-4">
+
+    <h2 class="fw-bold">
+        Gestión de Carreras
+    </h2>
+
+    <hr>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success alert-dismissible fade show">
+                {{ message }}
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert">
+                </button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <a
+        href="{% url 'nueva_carrera' %}"
+        class="btn btn-success mb-3">
+
+        ➕ Nueva Carrera
+
+    </a>
+
+    <form method="GET" class="row mb-3">
+
+        <div class="col-md-5">
+
+            <input
+                type="text"
+                name="buscar"
+                value="{{ buscar }}"
+                class="form-control"
+                placeholder="Buscar carrera">
+
+        </div>
+
+        <div class="col-md-2">
+
+            <button
+                class="btn btn-primary w-100">
+
+                🔍 Buscar
+
+            </button>
+
+        </div>
+
+        <div class="col-md-2">
+
+            <a
+                href="{% url 'lista_carreras' %}"
+                class="btn btn-secondary w-100">
+
+                Limpiar
+
+            </a>
+
+        </div>
+
+    </form>
+
+    <table class="table table-striped table-hover shadow">
+
+        <thead class="table-dark">
+
+            <tr>
+
+                <th>Código</th>
+
+                <th>Nombre</th>
+
+                <th>Estado</th>
+
+                <th class="text-center">
+
+                    Acciones
+
+                </th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            {% for carrera in carreras %}
+
+            <tr>
+
+                <td>{{ carrera.codigo }}</td>
+
+                <td>{{ carrera.nombre }}</td>
+
+                <td>
+
+                    {% if carrera.estado %}
+
+                        <span class="badge bg-success">
+
+                            Activa
+
+                        </span>
+
+                    {% else %}
+
+                        <span class="badge bg-secondary">
+
+                            Inactiva
+
+                        </span>
+
+                    {% endif %}
+
+                </td>
+
+                <td class="text-center">
+
+                    <a
+                        href="{% url 'editar_carrera' carrera.id %}"
+                        class="btn btn-warning btn-sm">
+
+                        ✏️ Editar
+
+                    </a>
+
+                    <a
+                        href="{% url 'eliminar_carrera' carrera.id %}"
+                        onclick="return confirm('¿Desea eliminar esta carrera?');"
+                        class="btn btn-danger btn-sm">
+
+                        🗑 Eliminar
+
+                    </a>
+
+                </td>
+
+            </tr>
+
+            {% empty %}
+
+            <tr>
+
+                <td colspan="4" class="text-center">
+
+                    No existen carreras registradas.
+
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}

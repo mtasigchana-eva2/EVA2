@@ -1,0 +1,148 @@
+{% load static %}
+{% load permisos_tags %}
+
+{% if request.user.is_authenticated %}
+
+<aside style="width:280px; background:#0056A6; color:white; min-height:85vh;">
+
+    <!-- FOTO Y DATOS DEL USUARIO -->
+    <div class="p-3 text-center border-bottom border-light">
+        {% if request.user.perfil.foto %}
+            <img
+                src="{{ request.user.perfil.foto.url }}"
+                class="rounded-circle mb-2"
+                style="width:80px; height:80px; object-fit:cover; border:3px solid white;"
+            >
+        {% else %}
+            <div
+                class="rounded-circle mb-2 d-inline-flex justify-content-center align-items-center bg-secondary text-white mx-auto"
+                style="width:80px; height:80px; font-size:30px; border:3px solid white;"
+            >
+                👤
+            </div>
+        {% endif %}
+
+        <h6 class="m-0 text-truncate">
+            {{ request.user.get_full_name|default:request.user.username }}
+        </h6>
+
+        <small class="text-light opacity-75">
+            {{ request.user.perfil.rol }}
+        </small>
+    </div>
+
+    <ul class="list-group list-group-flush">
+
+        <!-- TODOS LOS USUARIOS AUTENTICADOS -->
+        <li class="list-group-item">
+            <a href="{% url 'dashboard' %}" style="text-decoration:none; color:inherit;">
+                🏠 Dashboard
+            </a>
+        </li>
+
+        <li class="list-group-item">
+            <a href="{% url 'perfil' %}" style="text-decoration:none; color:inherit;">
+                👤 Mi Perfil
+            </a>
+        </li>
+
+        <li class="list-group-item">
+            <a href="{% url 'registrar_biometria' %}" style="text-decoration:none; color:inherit;">
+                📷 Registro Biométrico
+            </a>
+        </li>
+
+        <!-- GESTIÓN DE USUARIOS -->
+        {% if request.user.is_superuser or request.user.perfil.rol == 'Superadministrador' or request.user.perfil.rol == 'Administrador Talleres' %}
+        <li class="list-group-item">
+            <a href="{% url 'lista_usuarios' %}" style="text-decoration:none; color:inherit;">
+                👥 Gestión de Usuarios
+            </a>
+        </li>
+        {% endif %}
+
+        <!-- SOLICITUDES -->
+        <li class="list-group-item">
+            <a href="{% url 'lista_solicitudes' %}" style="text-decoration:none; color:inherit;">
+                🧪 Solicitud de Laboratorio
+            </a>
+        </li>
+
+        <li class="list-group-item">
+            <a href="{% url 'lista_solicitudes_herramientas' %}" style="text-decoration:none; color:inherit;">
+                🛠 Solicitud de Herramientas
+            </a>
+        </li>
+
+        <li class="list-group-item">
+            <a href="{% url 'lista_solicitudes_equipos' %}" style="text-decoration:none; color:inherit;">
+                💻 Solicitud de Equipos
+            </a>
+        </li>
+
+        <li class="list-group-item">
+            <a href="{% url 'lista_permisos' %}" style="text-decoration:none; color:inherit;">
+                📄 Solicitud de Permisos
+            </a>
+        </li>
+
+        <!-- INVENTARIOS Y RECURSOS (NO VISIBLE PARA ESTUDIANTES) -->
+        {% if not request.user|is_student %}
+        <li class="list-group-item">
+            <a href="{% url 'lista_inventario' %}" style="text-decoration:none; color:inherit;">
+                📦 Inventario
+            </a>
+        </li>
+
+        <li class="list-group-item">
+            <a href="{% url 'lista_herramientas' %}" style="text-decoration:none; color:inherit;">
+                🔧 Herramientas
+            </a>
+        </li>
+        {% endif %}
+
+        <!-- SEDES Y CARRERAS (SOLO VISIBLES PARA SUPERADMIN Y ADMIN TALLERES) -->
+        {% if request.user|can_manage_locations %}
+        <li class="list-group-item">
+            <a href="{% url 'lista_sedes' %}" style="text-decoration:none; color:inherit;">
+                🏛 Sedes
+            </a>
+        </li>
+
+        <li class="list-group-item">
+            <a href="{% url 'lista_carreras' %}" style="text-decoration:none; color:inherit;">
+                🎓 Carreras
+            </a>
+        </li>
+        {% endif %}
+
+        <!-- REPORTES -->
+        {% if request.user.is_superuser or request.user.perfil.rol == 'Superadministrador' or request.user.perfil.rol == 'Coordinador Carrera' or request.user.perfil.rol == 'Coordinador Talleres' or request.user.perfil.rol == 'Administrador Talleres' %}
+        <li class="list-group-item">
+            <a href="{% url 'lista_reportes' %}" style="text-decoration:none; color:inherit;">
+                📊 Reportes
+            </a>
+        </li>
+        {% endif %}
+
+        <!-- ADMINISTRACIÓN DE DJANGO -->
+        {% if request.user.is_superuser or request.user.perfil.rol == 'Superadministrador' %}
+        <li class="list-group-item">
+            <a href="{% url 'admin:index' %}" style="text-decoration:none; color:inherit;">
+                ⚙ Administración
+            </a>
+        </li>
+        {% endif %}
+
+        <!-- CERRAR SESIÓN -->
+        <li class="list-group-item">
+            <a href="{% url 'logout' %}" style="text-decoration:none; color:inherit;">
+                🚪 Cerrar sesión
+            </a>
+        </li>
+
+    </ul>
+
+</aside>
+
+{% endif %}

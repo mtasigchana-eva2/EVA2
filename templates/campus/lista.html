@@ -1,0 +1,67 @@
+{% extends 'base/base.html' %}
+
+{% block contenido %}
+
+<h2>Campus</h2>
+
+<hr>
+
+<a href="{% url 'nuevo_campus' %}" class="btn btn-success">
+
+Nuevo Campus
+
+</a>
+
+<table class="table table-bordered mt-4">
+
+<thead>
+
+<tr>
+
+<th>ID</th>
+
+<th>Campus</th>
+
+<th>Sede</th>
+
+<th>Estado</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for c in campus %}
+
+<tr>
+
+<td>{{c.id}}</td>
+
+<td>{{c.nombre}}</td>
+
+<td>{{c.sede}}</td>
+
+<td>
+
+{% if c.estado %}
+
+Activo
+
+{% else %}
+
+Inactivo
+
+{% endif %}
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+{% endblock %}

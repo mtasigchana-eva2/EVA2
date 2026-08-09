@@ -1,0 +1,24 @@
+{% extends 'base/base.html' %}
+
+{% block contenido %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>🔔 Mis Notificaciones</h2>
+        <a href="{% url 'marcar_todas_leidas' %}" class="btn btn-outline-primary btn-sm">Marcar todas como leídas</a>
+    </div>
+
+    <div class="list-group shadow-sm">
+        {% for n in notificaciones %}
+            <a href="{% url 'marcar_como_leida' n.id %}" class="list-group-item list-group-item-action {% if not n.leido %}fw-bold bg-light{% endif %}">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">{{ n.titulo }}</h6>
+                    <small class="text-muted">{{ n.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                </div>
+                <p class="mb-1 text-secondary">{{ n.mensaje }}</p>
+            </a>
+        {% empty %}
+            <div class="p-4 text-center text-muted">No tienes notificaciones registradas.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

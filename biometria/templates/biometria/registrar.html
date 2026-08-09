@@ -1,0 +1,54 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block contenido %}
+
+<div class="container mt-4">
+
+    <h2>Registro Biométrico</h2>
+    <hr>
+
+    {% if biometria_bloqueada %}
+        <div class="alert alert-info shadow-sm mb-4">
+            🔒 <strong>Fotografía Registrada:</strong> Ya existe un registro biométrico guardado en tu cuenta. Para actualizarlo, solicita apoyo al Administrador.
+        </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-8">
+            <video id="video" width="640" height="480" autoplay class="border rounded bg-dark"></video>
+            <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+            <br><br>
+
+            {% if not biometria_bloqueada %}
+                <button class="btn btn-primary me-2" id="btnCamara">
+                    Abrir Cámara
+                </button>
+                <button class="btn btn-success" id="capturar">
+                    Capturar Rostro
+                </button>
+            {% else %}
+                <button class="btn btn-secondary me-2" disabled>
+                    Cámara Deshabilitada
+                </button>
+            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            <h5>Fotografía registrada</h5>
+            {% if biometria and biometria.foto %}
+                <img src="{{ biometria.foto.url }}" class="img-fluid rounded shadow">
+            {% else %}
+                <div class="alert alert-warning">
+                    No existe fotografía registrada.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<link rel="stylesheet" href="{% static 'biometria/css/biometria.css' %}">
+<script src="{% static 'biometria/js/biometria.js' %}"></script>
+
+{% endblock %}

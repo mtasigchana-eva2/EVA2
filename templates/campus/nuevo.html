@@ -1,0 +1,23 @@
+{% extends 'base/base.html' %}
+
+{% block contenido %}
+
+<h2>Nuevo Campus</h2>
+
+<hr>
+
+<form method="POST">
+
+{% csrf_token %}
+
+{{formulario.as_p}}
+
+<button class="btn btn-success">
+
+Guardar
+
+</button>
+
+</form>
+
+{% endblock %}

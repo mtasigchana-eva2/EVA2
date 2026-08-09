@@ -1,0 +1,172 @@
+{% extends 'base/base.html' %}
+
+{% block contenido %}
+
+<h2>Reporte General de Solicitudes</h2>
+
+<!-- Buscador por estudiante o estado -->
+<div class="row mb-4 mt-3">
+    <div class="col-md-8">
+        <form method="GET">
+            <div class="input-group">
+                <span class="input-group-text">🔍</span>
+                <input
+                    type="text"
+                    name="buscar"
+                    class="form-control"
+                    placeholder="Buscar estudiante o estado..."
+                    value="{{ buscar|default:'' }}"
+                >
+                <button type="submit" class="btn btn-primary">Buscar</button>
+                <a href="{% url 'reporte_solicitudes' %}" class="btn btn-secondary">Limpiar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Botones de Acción -->
+<div class="mb-4">
+    <button onclick="window.print()" class="btn btn-dark">
+        🖨 Imprimir
+    </button>
+</div>
+
+<hr>
+
+<h4>Solicitudes de Laboratorio</h4>
+<table class="table table-bordered table-hover">
+    <thead class="table-primary">
+        <tr>
+            <th>ID</th>
+            <th>Estudiante</th>
+            <th>Laboratorio</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th width="120">Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in solicitudes %}
+        <tr>
+            <td>{{ s.id }}</td>
+            <td>{{ s.estudiante }}</td>
+            <td>{{ s.laboratorio }}</td>
+            <td>{{ s.fecha }}</td>
+            <td>{{ s.estado }}</td>
+            <td class="text-center">
+                <a href="{% url 'exportar_pdf_solicitud' s.id %}" class="btn btn-danger btn-sm">
+                    📄 PDF
+                </a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6" class="text-center">No existen solicitudes.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<hr>
+
+<h4>Solicitudes de Herramientas</h4>
+<table class="table table-bordered table-hover">
+    <thead class="table-success">
+        <tr>
+            <th>ID</th>
+            <th>Estudiante</th>
+            <th>Herramienta</th>
+            <th>Estado</th>
+            <th width="120">Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for h in herramientas %}
+        <tr>
+            <td>{{ h.id }}</td>
+            <td>{{ h.estudiante }}</td>
+            <td>{{ h.herramienta }}</td>
+            <td>{{ h.estado }}</td>
+            <td class="text-center">
+                <a href="{% url 'exportar_pdf_herramienta' h.id %}" class="btn btn-danger btn-sm">
+                    📄 PDF
+                </a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5" class="text-center">Sin registros.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<hr>
+
+<h4>Solicitudes de Equipos</h4>
+<table class="table table-bordered table-hover">
+    <thead class="table-warning">
+        <tr>
+            <th>ID</th>
+            <th>Estudiante</th>
+            <th>Equipo</th>
+            <th>Estado</th>
+            <th width="120">Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for e in equipos %}
+        <tr>
+            <td>{{ e.id }}</td>
+            <td>{{ e.estudiante }}</td>
+            <td>{{ e.equipo }}</td>
+            <td>{{ e.estado }}</td>
+            <td class="text-center">
+                <a href="{% url 'exportar_pdf_equipo' e.id %}" class="btn btn-danger btn-sm">
+                    📄 PDF
+                </a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5" class="text-center">Sin registros.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<hr>
+
+<h4>Solicitudes de Permisos</h4>
+<table class="table table-bordered table-hover">
+    <thead class="table-danger">
+        <tr>
+            <th>ID</th>
+            <th>Solicitante</th>
+            <th>Motivo</th>
+            <th>Estado</th>
+            <th width="120">Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in permisos %}
+        <tr>
+            <td>{{ p.id }}</td>
+            <td>{{ p.estudiante }}</td>
+            <td>{{ p.motivo }}</td>
+            <td>{{ p.estado }}</td>
+            <td class="text-center">
+                <a href="{% url 'exportar_pdf_permiso' p.id %}" class="btn btn-danger btn-sm">
+                    📄 PDF
+                </a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5" class="text-center">Sin registros.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

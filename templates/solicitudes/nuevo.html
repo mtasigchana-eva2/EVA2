@@ -1,0 +1,65 @@
+{% extends 'base/base.html' %}
+
+{% block contenido %}
+
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h3>🧪 Nueva Solicitud de Laboratorio</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Carrera</label>
+                        {{ formulario.carrera }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Sede</label>
+                        {{ formulario.sede }}
+                    </div>
+                    {% if formulario.laboratorio %}
+                    <div class="col-md-6 mb-3">
+                        <label>Laboratorio</label>
+                        {{ formulario.laboratorio }}
+                    </div>
+                    {% endif %}
+                    <div class="col-md-6 mb-3">
+                        <label>Docente Responsable</label>
+                        {{ formulario.docente }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label>Fecha</label>
+                        {{ formulario.fecha }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label>Hora Inicio</label>
+                        {{ formulario.hora_inicio }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label>Hora Fin</label>
+                        {{ formulario.hora_fin }}
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label>Motivo de la Solicitud</label>
+                        {{ formulario.motivo }}
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label>Adjuntar Documento (Opcional)</label>
+                        {{ formulario.documento }}
+                    </div>
+                </div>
+                <hr>
+                <button class="btn btn-success">
+                    💾 Enviar Solicitud
+                </button>
+                <a href="{% url 'lista_solicitudes' %}" class="btn btn-secondary">
+                    Cancelar
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
