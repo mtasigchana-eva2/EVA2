@@ -1,0 +1,626 @@
+[
+{
+  "model": "auth.user",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$VjdkZzQWnV0PWtt1Lh3H6g$LIMTLwtYf+m1lQwlgaqjDUw3bNZBO3RADLt4U1glk5Q=",
+    "last_login": "2026-08-09T20:19:39.617Z",
+    "is_superuser": true,
+    "username": "Mario",
+    "first_name": "Mario",
+    "last_name": "Tasigchana",
+    "email": "mtasigchanam@unemi.edu.ec",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-08-06T15:16:49.026Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 2,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$XX8Iow9KZoTAWcXFARTlSq$HVjFPQ7icmw6eH60iwmQlcj+mpaos5q7YqNaMMw/Nxs=",
+    "last_login": "2026-08-09T18:25:05.888Z",
+    "is_superuser": false,
+    "username": "PabloM",
+    "first_name": "Pablo",
+    "last_name": "Mendoza",
+    "email": "mario.15201@hotmail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-08-08T01:10:08.736Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 3,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$D53YS76hOCuyVHgWc4sFB0$n8Z25/I72X62vRMwGpWmD8lbliLRoAMM7JHuUfD8kKw=",
+    "last_login": "2026-08-09T18:24:41.959Z",
+    "is_superuser": false,
+    "username": "Diego",
+    "first_name": "Diego",
+    "last_name": "Altamirano",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-08-08T03:04:54.065Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 4,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$pdVRGb8MfGTHPYjRi5M1C1$13zYNpxd47HramKkRo7Pf3Xs74V1WJJ+HcRFZaNBRpk=",
+    "last_login": "2026-08-09T18:38:44.442Z",
+    "is_superuser": false,
+    "username": "Sebastian",
+    "first_name": "Sebastian",
+    "last_name": "Heredia",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-08-08T03:05:42.263Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 5,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$EqMgeUadeA2HPwcAvpdILG$+zT1RSseqDv5bhUiJDdz2sI5hPAPWDq7bd+ZREgqpSE=",
+    "last_login": "2026-08-09T17:13:43.524Z",
+    "is_superuser": false,
+    "username": "Carlita",
+    "first_name": "Carla",
+    "last_name": "Robalino",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-08-08T03:08:19.667Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 6,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$nfWVSf9RYJUxDpaQ10saK1$9QVEh4MOXa6SVl3kGy8SyMOad+2RFdN9oKb1HEmt/Lk=",
+    "last_login": "2026-08-09T17:13:09.664Z",
+    "is_superuser": false,
+    "username": "Jorgito",
+    "first_name": "Jorge",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-08-08T03:13:26.546Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "5d9fl14s43tzcc6f526nxcwfh97aqiq7",
+  "fields": {
+    "session_data": ".eJxVjMsOwiAQAP9lz4ZA6fLo0bvfQJYFpGpoUtqT8d9Nkx70OjOZNwTatxr2ntcwJ5hAweWXReJnbodID2r3RfDStnWO4kjEabu4LSm_rmf7N6jUK0wQlYnSGzsUi4V9YuQSZWQn9aiJOVmjCyol2ZAmKn7AolAhJsdGjw4-X_PSN_o:1wt9zf:Kbe9DqGeqDzuIIzu1F6A8WValM_qNTWSsQXaR55uXUc",
+    "expire_date": "2026-08-23T20:19:39.632Z"
+  }
+},
+{
+  "model": "usuarios.perfil",
+  "pk": 1,
+  "fields": {
+    "usuario": 1,
+    "foto": "perfiles/WhatsApp_Image_2026-08-07_at_7.39.15_PM.jpeg",
+    "rol": "Superadministrador",
+    "carrera": 2,
+    "sede": 1,
+    "telefono": "0993238486",
+    "fecha_nacimiento": null,
+    "edad": 32,
+    "direccion": "Guasmo central",
+    "descripcion": "Creador del Programa y Administrador",
+    "estado": "Activo"
+  }
+},
+{
+  "model": "usuarios.perfil",
+  "pk": 2,
+  "fields": {
+    "usuario": 2,
+    "foto": "",
+    "rol": "Estudiante",
+    "carrera": null,
+    "sede": null,
+    "telefono": "",
+    "fecha_nacimiento": null,
+    "edad": null,
+    "direccion": "",
+    "descripcion": "",
+    "estado": "Activo"
+  }
+},
+{
+  "model": "usuarios.perfil",
+  "pk": 3,
+  "fields": {
+    "usuario": 3,
+    "foto": "",
+    "rol": "Docente",
+    "carrera": 2,
+    "sede": 2,
+    "telefono": "",
+    "fecha_nacimiento": null,
+    "edad": null,
+    "direccion": "",
+    "descripcion": "",
+    "estado": "Activo"
+  }
+},
+{
+  "model": "usuarios.perfil",
+  "pk": 4,
+  "fields": {
+    "usuario": 4,
+    "foto": "",
+    "rol": "Administrador Talleres",
+    "carrera": 1,
+    "sede": 1,
+    "telefono": "",
+    "fecha_nacimiento": null,
+    "edad": null,
+    "direccion": "",
+    "descripcion": "",
+    "estado": "Activo"
+  }
+},
+{
+  "model": "usuarios.perfil",
+  "pk": 5,
+  "fields": {
+    "usuario": 5,
+    "foto": "",
+    "rol": "Coordinador Talleres",
+    "carrera": null,
+    "sede": null,
+    "telefono": "",
+    "fecha_nacimiento": null,
+    "edad": null,
+    "direccion": "",
+    "descripcion": "",
+    "estado": "Activo"
+  }
+},
+{
+  "model": "usuarios.perfil",
+  "pk": 6,
+  "fields": {
+    "usuario": 6,
+    "foto": "",
+    "rol": "Coordinador Carrera",
+    "carrera": null,
+    "sede": null,
+    "telefono": "",
+    "fecha_nacimiento": null,
+    "edad": null,
+    "direccion": "",
+    "descripcion": "",
+    "estado": "Activo"
+  }
+},
+{
+  "model": "carreras.carrera",
+  "pk": 1,
+  "fields": {
+    "codigo": "MEc",
+    "nombre": "Mec├ínica Automotriz",
+    "descripcion": "",
+    "estado": true,
+    "fecha_creacion": "2026-08-07T08:18:16.027Z"
+  }
+},
+{
+  "model": "carreras.carrera",
+  "pk": 2,
+  "fields": {
+    "codigo": "Dsw",
+    "nombre": "Desarrollo de Software",
+    "descripcion": "",
+    "estado": true,
+    "fecha_creacion": "2026-08-07T08:18:31.262Z"
+  }
+},
+{
+  "model": "sedes.sede",
+  "pk": 1,
+  "fields": {
+    "nombre": "Guayaquil",
+    "ciudad": "Guayaquil",
+    "direccion": "Av. Carlos Julio Arosemena, diagonal al Diario Extra",
+    "telefono": "0",
+    "estado": true
+  }
+},
+{
+  "model": "sedes.sede",
+  "pk": 2,
+  "fields": {
+    "nombre": "Pifo",
+    "ciudad": "Quito",
+    "direccion": "Calle Jambel├¡ OE3-158 y la Uni├│n",
+    "telefono": "0",
+    "estado": true
+  }
+},
+{
+  "model": "sedes.sede",
+  "pk": 3,
+  "fields": {
+    "nombre": "Magdalena",
+    "ciudad": "Quito",
+    "direccion": "0",
+    "telefono": "0",
+    "estado": true
+  }
+},
+{
+  "model": "inventario.inventario",
+  "pk": 1,
+  "fields": {
+    "codigo": "SW001",
+    "nombre": "Laptop Dell",
+    "categoria": "Equipos de computacion",
+    "carrera": 2,
+    "sede": 1,
+    "cantidad": 10,
+    "estado": "Disponible",
+    "observacion": "ninguna"
+  }
+},
+{
+  "model": "inventario.inventario",
+  "pk": 2,
+  "fields": {
+    "codigo": "EA001",
+    "nombre": "Laptop HP",
+    "categoria": "Equipos de computacion",
+    "carrera": 2,
+    "sede": 2,
+    "cantidad": 50,
+    "estado": "Disponible",
+    "observacion": "ninguna"
+  }
+},
+{
+  "model": "solicitudes.solicitud",
+  "pk": 1,
+  "fields": {
+    "estudiante": 1,
+    "carrera": 2,
+    "sede": 1,
+    "laboratorio": "",
+    "docente": "Ing. Diego Altamirano",
+    "fecha": "2026-08-07",
+    "hora_inicio": "13:30:00",
+    "hora_fin": "15:30:00",
+    "motivo": "reunion",
+    "documento": "",
+    "estado": "Aprobada",
+    "aprobado_por": 1,
+    "fecha_respuesta": "2026-08-07T08:37:31.992Z",
+    "observacion": ""
+  }
+},
+{
+  "model": "solicitudes.solicitud",
+  "pk": 2,
+  "fields": {
+    "estudiante": 2,
+    "carrera": 2,
+    "sede": 1,
+    "laboratorio": "",
+    "docente": "Ing. Diego Altamirano",
+    "fecha": "2026-08-12",
+    "hora_inicio": "15:00:00",
+    "hora_fin": "20:00:00",
+    "motivo": "Presentar Proyecto",
+    "documento": "",
+    "estado": "Aprobada",
+    "aprobado_por": 1,
+    "fecha_respuesta": "2026-08-09T18:01:41.557Z",
+    "observacion": ""
+  }
+},
+{
+  "model": "solicitudes.solicitud",
+  "pk": 3,
+  "fields": {
+    "estudiante": 2,
+    "carrera": 1,
+    "sede": 2,
+    "laboratorio": "",
+    "docente": "Ing. Sebasti├ín",
+    "fecha": "2026-08-10",
+    "hora_inicio": "08:59:00",
+    "hora_fin": "12:30:00",
+    "motivo": "Practica",
+    "documento": "",
+    "estado": "Pendiente",
+    "aprobado_por": null,
+    "fecha_respuesta": null,
+    "observacion": ""
+  }
+},
+{
+  "model": "herramientas.herramienta",
+  "pk": 1,
+  "fields": {
+    "inventario": 1,
+    "codigo": "SW001",
+    "numero_serie": "1",
+    "marca": "SUZUI",
+    "modelo": "1",
+    "estado": "Prestada",
+    "observacion": "NINGUNO"
+  }
+},
+{
+  "model": "permisos.permiso",
+  "pk": 1,
+  "fields": {
+    "estudiante": "MARIO PABLO TASIGCHANA MENDOZA",
+    "carrera": "Mec├ínica Automotriz",
+    "docente": "Ing. Sebasti├ín",
+    "fecha_inicio": "2026-08-06",
+    "fecha_fin": "2026-08-07",
+    "motivo": "Examenes",
+    "documento": "",
+    "estado": "Aprobado",
+    "fecha_solicitud": "2026-08-06T15:32:40.211Z"
+  }
+},
+{
+  "model": "permisos.permiso",
+  "pk": 2,
+  "fields": {
+    "estudiante": "PABLO MENDOZA",
+    "carrera": "Desarollo de Software",
+    "docente": "Ing. Diego Altamirano",
+    "fecha_inicio": "2026-08-11",
+    "fecha_fin": "2026-08-12",
+    "motivo": "Trabajo",
+    "documento": "",
+    "estado": "Pendiente",
+    "fecha_solicitud": "2026-08-09T16:35:20.431Z"
+  }
+},
+{
+  "model": "permisos.permiso",
+  "pk": 3,
+  "fields": {
+    "estudiante": "MARIO PABLO TASIGCHANA MENDOZA",
+    "carrera": "Mec├ínica Automotriz",
+    "docente": "Ing. Sebasti├ín",
+    "fecha_inicio": "2026-08-11",
+    "fecha_fin": "2026-08-14",
+    "motivo": "Laborales",
+    "documento": "",
+    "estado": "Pendiente",
+    "fecha_solicitud": "2026-08-09T16:50:19.765Z"
+  }
+},
+{
+  "model": "permisos.permiso",
+  "pk": 4,
+  "fields": {
+    "estudiante": "PABLO MENDOZA",
+    "carrera": "Mec├ínica Automotriz",
+    "docente": "Ing. Sebasti├ín",
+    "fecha_inicio": "2026-08-10",
+    "fecha_fin": "2026-08-10",
+    "motivo": "Tengo cambio de horario laboral",
+    "documento": "",
+    "estado": "Pendiente",
+    "fecha_solicitud": "2026-08-09T17:08:25.782Z"
+  }
+},
+{
+  "model": "solicitudes_herramientas.solicitudherramienta",
+  "pk": 1,
+  "fields": {
+    "estudiante": "MARIO PABLO TASIGCHANA MENDOZA",
+    "carrera": "Mec├ínica Automotriz",
+    "profesor": "Ing.Sebastian",
+    "herramienta": 1,
+    "cantidad": 1,
+    "fecha_inicio": "2026-08-07",
+    "fecha_fin": "2026-08-08",
+    "motivo": "trabajo",
+    "documento": "",
+    "estado": "Aprobada",
+    "fecha_registro": "2026-08-07T08:46:14.184Z"
+  }
+},
+{
+  "model": "solicitudes_equipos.solicitudequipo",
+  "pk": 1,
+  "fields": {
+    "estudiante": "MARIO PABLO TASIGCHANA MENDOZA",
+    "carrera": "Desarollo de Software",
+    "profesor": "Ing.Diego Altamirano",
+    "equipo": 1,
+    "cantidad": 2,
+    "numero_equipo": "1",
+    "numero_serie": "12.0",
+    "fecha_inicio": "2026-08-09",
+    "fecha_fin": "2026-08-11",
+    "motivo": "Trabajo",
+    "documento": "",
+    "estado": "Pendiente",
+    "fecha_registro": "2026-08-07T08:47:57.348Z"
+  }
+},
+{
+  "model": "biometria.biometria",
+  "pk": 1,
+  "fields": {
+    "usuario": 1,
+    "foto": "biometria/Mario_YVy8ff1.png",
+    "fecha_registro": "2026-08-07T01:56:37.154Z",
+    "activo": true
+  }
+},
+{
+  "model": "notificaciones.notificacion",
+  "pk": 1,
+  "fields": {
+    "usuario": 1,
+    "titulo": "Nueva Solicitud de Permiso ­ƒô£",
+    "mensaje": "El estudiante MARIO PABLO TASIGCHANA MENDOZA ha registrado una nueva solicitud de permiso.",
+    "leido": true,
+    "fecha_creacion": "2026-08-09T16:50:19.771Z",
+    "url_destino": "/permisos/"
+  }
+},
+{
+  "model": "notificaciones.notificacion",
+  "pk": 2,
+  "fields": {
+    "usuario": 1,
+    "titulo": "Nueva Solicitud de Permiso ­ƒô£",
+    "mensaje": "El estudiante PABLO MENDOZA ha registrado una nueva solicitud de permiso.",
+    "leido": false,
+    "fecha_creacion": "2026-08-09T17:08:25.791Z",
+    "url_destino": "/permisos/"
+  }
+},
+{
+  "model": "notificaciones.notificacion",
+  "pk": 3,
+  "fields": {
+    "usuario": 3,
+    "titulo": "Nueva Solicitud de Permiso ­ƒô£",
+    "mensaje": "El estudiante PABLO MENDOZA ha registrado una nueva solicitud de permiso.",
+    "leido": true,
+    "fecha_creacion": "2026-08-09T17:08:29.101Z",
+    "url_destino": "/permisos/"
+  }
+},
+{
+  "model": "notificaciones.notificacion",
+  "pk": 4,
+  "fields": {
+    "usuario": 4,
+    "titulo": "Nueva Solicitud de Permiso ­ƒô£",
+    "mensaje": "El estudiante PABLO MENDOZA ha registrado una nueva solicitud de permiso.",
+    "leido": false,
+    "fecha_creacion": "2026-08-09T17:08:29.106Z",
+    "url_destino": "/permisos/"
+  }
+},
+{
+  "model": "notificaciones.notificacion",
+  "pk": 5,
+  "fields": {
+    "usuario": 5,
+    "titulo": "Nueva Solicitud de Permiso ­ƒô£",
+    "mensaje": "El estudiante PABLO MENDOZA ha registrado una nueva solicitud de permiso.",
+    "leido": false,
+    "fecha_creacion": "2026-08-09T17:08:29.110Z",
+    "url_destino": "/permisos/"
+  }
+},
+{
+  "model": "notificaciones.notificacion",
+  "pk": 6,
+  "fields": {
+    "usuario": 6,
+    "titulo": "Nueva Solicitud de Permiso ­ƒô£",
+    "mensaje": "El estudiante PABLO MENDOZA ha registrado una nueva solicitud de permiso.",
+    "leido": false,
+    "fecha_creacion": "2026-08-09T17:08:29.115Z",
+    "url_destino": "/permisos/"
+  }
+},
+{
+  "model": "notificaciones.notificacion",
+  "pk": 7,
+  "fields": {
+    "usuario": 2,
+    "titulo": "Solicitud de Laboratorio Aprobada Ô£à",
+    "mensaje": "Tu solicitud para el laboratorio  ha sido APROBADA.",
+    "leido": false,
+    "fecha_creacion": "2026-08-09T18:01:41.568Z",
+    "url_destino": "/solicitudes/"
+  }
+},
+{
+  "model": "notificaciones.notificacion",
+  "pk": 8,
+  "fields": {
+    "usuario": 1,
+    "titulo": "Nueva Solicitud de Laboratorio ­ƒö¼",
+    "mensaje": "El estudiante Pablo Mendoza ha solicitado el laboratorio .",
+    "leido": false,
+    "fecha_creacion": "2026-08-09T18:31:51.381Z",
+    "url_destino": "/solicitudes/"
+  }
+},
+{
+  "model": "notificaciones.notificacion",
+  "pk": 9,
+  "fields": {
+    "usuario": 3,
+    "titulo": "Nueva Solicitud de Laboratorio ­ƒö¼",
+    "mensaje": "El estudiante Pablo Mendoza ha solicitado el laboratorio .",
+    "leido": false,
+    "fecha_creacion": "2026-08-09T18:31:53.971Z",
+    "url_destino": "/solicitudes/"
+  }
+},
+{
+  "model": "notificaciones.notificacion",
+  "pk": 10,
+  "fields": {
+    "usuario": 4,
+    "titulo": "Nueva Solicitud de Laboratorio ­ƒö¼",
+    "mensaje": "El estudiante Pablo Mendoza ha solicitado el laboratorio .",
+    "leido": false,
+    "fecha_creacion": "2026-08-09T18:31:53.980Z",
+    "url_destino": "/solicitudes/"
+  }
+},
+{
+  "model": "notificaciones.notificacion",
+  "pk": 11,
+  "fields": {
+    "usuario": 5,
+    "titulo": "Nueva Solicitud de Laboratorio ­ƒö¼",
+    "mensaje": "El estudiante Pablo Mendoza ha solicitado el laboratorio .",
+    "leido": false,
+    "fecha_creacion": "2026-08-09T18:31:53.987Z",
+    "url_destino": "/solicitudes/"
+  }
+},
+{
+  "model": "notificaciones.notificacion",
+  "pk": 12,
+  "fields": {
+    "usuario": 6,
+    "titulo": "Nueva Solicitud de Laboratorio ­ƒö¼",
+    "mensaje": "El estudiante Pablo Mendoza ha solicitado el laboratorio .",
+    "leido": false,
+    "fecha_creacion": "2026-08-09T18:31:53.995Z",
+    "url_destino": "/solicitudes/"
+  }
+}
+]
