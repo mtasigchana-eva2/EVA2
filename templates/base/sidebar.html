@@ -3,7 +3,20 @@
 
 {% if request.user.is_authenticated %}
 
-<aside style="width:280px; background:#0056A6; color:white; min-height:85vh;">
+<aside class="sidebar-responsive" style="background:#0056A6; color:white;">
+
+    <style>
+        .sidebar-responsive {
+            width: 280px;
+            min-height: 85vh;
+        }
+        @media (max-width: 767.98px) {
+            .sidebar-responsive {
+                width: 100% !important;
+                min-height: auto !important;
+            }
+        }
+    </style>
 
     <!-- FOTO Y DATOS DEL USUARIO -->
     <div class="p-3 text-center border-bottom border-light">
