@@ -1,15 +1,44 @@
+import unicodedata
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponseForbidden
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
 from django.contrib.auth.models import User
 from django.db.models import Q
+
+# ReportLab para la generación del PDF estructurado en tabla
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
 from notificaciones.utils import enviar_notificacion_y_correo
 from usuarios.permisos import puede_editar_solicitudes, puede_eliminar_solicitudes
 from .models import SolicitudEquipo
 from .forms import SolicitudEquipoForm
+
+
+def normalizar_texto(val):
+    """
+    Convierte cualquier objeto o texto a una cadena limpia sin tildes ni caracteres
+    especiales para evitar errores de codificación en el PDF.
+    """
+    if val is None:
+        return "-"
+    
+    if hasattr(val, 'get_full_name') and callable(val.get_full_name):
+        val = val.get_full_name() or getattr(val, 'username', str(val))
+    
+    texto = str(val)
+    texto_sin_tildes = ''.join(
+        c for c in unicodedata.normalize('NFD', texto)
+        if unicodedata.category(c) != 'Mn'
+    )
+    
+    reemplazos = {'º': '.', '°': '.', 'ª': '.'}
+    for orig, reemp in reemplazos.items():
+        texto_sin_tildes = texto_sin_tildes.replace(orig, reemp)
+        
+    return texto_sin_tildes
 
 
 def lista_solicitudes_equipos(request):
@@ -120,32 +149,125 @@ def exportar_pdf_solicitud_equipo(request, id):
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="Solicitud_Equipo_{solicitud.id}.pdf"'
 
-    pdf = canvas.Canvas(response, pagesize=letter)
-    width, height = letter
-    y = height - 50
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=letter,
+        rightMargin=36,
+        leftMargin=36,
+        topMargin=36,
+        bottomMargin=36
+    )
 
-    pdf.setFont("Helvetica-Bold", 18)
-    pdf.drawString(50, y, "TECNE ECUADOR")
-    y -= 30
+    styles = getSampleStyleSheet()
+    
+    # Estilos de texto
+    estilo_titulo_inst = ParagraphStyle(
+        "TituloInst",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=12,
+        alignment=1,
+        textColor=colors.HexColor("#003366")
+    )
+    
+    estilo_subtitulo_inst = ParagraphStyle(
+        "SubTituloInst",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=10,
+        alignment=1,
+        textColor=colors.HexColor("#333333")
+    )
 
-    pdf.setFont("Helvetica-Bold", 15)
-    pdf.drawString(50, y, "SOLICITUD DE EQUIPO")
-    y -= 40
+    estilo_titulo_doc = ParagraphStyle(
+        "TituloDoc",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=13,
+        alignment=1,
+        textColor=colors.HexColor("#003366"),
+        spaceAfter=15
+    )
 
-    pdf.setFont("Helvetica", 12)
-    pdf.drawString(50, y, f"ID Solicitud: {solicitud.id}")
-    y -= 20
-    pdf.drawString(50, y, f"Estudiante: {solicitud.estudiante}")
-    y -= 20
-    pdf.drawString(50, y, f"Equipo: {solicitud.equipo}")
-    y -= 20
-    pdf.drawString(50, y, f"Cantidad: {solicitud.cantidad}")
-    y -= 20
-    pdf.drawString(50, y, f"Estado: {solicitud.estado}")
+    estilo_celda = ParagraphStyle(
+        "Celda",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=9,
+        leading=11
+    )
 
-    pdf.showPage()
-    pdf.save()
+    estilo_celda_bold = ParagraphStyle(
+        "CeldaBold",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=9,
+        leading=11
+    )
 
+    elementos = []
+
+    # Encabezado Institucional
+    elementos.append(Paragraph("INSTITUTO SUPERIOR TECNOLOGICO TECNOECUATORIANO", estilo_titulo_inst))
+    elementos.append(Paragraph("SISTEMA INSTITUCIONAL EVA2", estilo_subtitulo_inst))
+    elementos.append(Spacer(1, 10))
+    elementos.append(Paragraph("SOLICITUD DE EQUIPO", estilo_titulo_doc))
+
+    # Formateo de fecha de registro si existe
+    fecha_reg = solicitud.fecha_registro.strftime("%d/%m/%Y") if getattr(solicitud, 'fecha_registro', None) else "-"
+
+    # Matriz con los datos de la solicitud de equipo
+    tabla_data = [
+        [
+            Paragraph("<b>N. Solicitud</b>", estilo_celda_bold),
+            Paragraph(normalizar_texto(solicitud.id), estilo_celda),
+            Paragraph("<b>Estado</b>", estilo_celda_bold),
+            Paragraph(normalizar_texto(solicitud.estado), estilo_celda)
+        ],
+        [
+            Paragraph("<b>Estudiante</b>", estilo_celda_bold),
+            Paragraph(normalizar_texto(solicitud.estudiante), estilo_celda),
+            Paragraph("<b>Carrera</b>", estilo_celda_bold),
+            Paragraph(normalizar_texto(getattr(solicitud, 'carrera', 'N/A')), estilo_celda)
+        ],
+        [
+            Paragraph("<b>Equipo</b>", estilo_celda_bold),
+            Paragraph(normalizar_texto(solicitud.equipo), estilo_celda),
+            Paragraph("<b>Cantidad</b>", estilo_celda_bold),
+            Paragraph(normalizar_texto(solicitud.cantidad), estilo_celda)
+        ],
+        [
+            Paragraph("<b>Fecha Registro</b>", estilo_celda_bold),
+            Paragraph(fecha_reg, estilo_celda),
+            Paragraph("", estilo_celda),
+            Paragraph("", estilo_celda)
+        ],
+    ]
+
+    t_principal = Table(tabla_data, colWidths=[110, 160, 110, 160])
+    t_principal.setStyle(TableStyle([
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#CCCCCC")),
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor("#F2F2F2")),
+        ('BACKGROUND', (2, 0), (2, -1), colors.HexColor("#F2F2F2")),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elementos.append(t_principal)
+    elementos.append(Spacer(1, 20))
+
+    # Pie de página
+    estilo_pie = ParagraphStyle(
+        "Pie",
+        parent=styles["Normal"],
+        fontName="Helvetica-Oblique",
+        fontSize=8,
+        alignment=1,
+        textColor=colors.gray
+    )
+    elementos.append(Paragraph("Documento generado automaticamente por el Sistema Institucional EVA2.", estilo_pie))
+
+    doc.build(elementos)
     return response
 
 
