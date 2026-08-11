@@ -15,6 +15,22 @@ from .models import Permiso
 from .forms import PermisoForm
 
 
+def limpiar_texto(texto):
+    """Limpia caracteres especiales y tildes para evitar cuadros negros en ReportLab."""
+    if not texto:
+        return ""
+    
+    reemplazos = {
+        'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u',
+        'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U',
+        'ñ': 'ñ', 'Ñ': 'Ñ', 'º': '.', '°': '.'
+    }
+    texto_str = str(texto)
+    for orig, reemp in reemplazos.items():
+        texto_str = texto_str.replace(orig, reemp)
+    return texto_str
+
+
 def lista_permisos(request):
     permisos = Permiso.objects.all().order_by("-fecha_solicitud")
     return render(
@@ -30,7 +46,6 @@ def nuevo_permiso(request):
         if formulario.is_valid():
             permiso = formulario.save(commit=False)
             
-            # Asignación automática del estado a Pendiente
             if not request.user.is_superuser and (not hasattr(request.user, 'perfil') or request.user.perfil.rol == 'Estudiante'):
                 permiso.estado = "Pendiente"
             elif not permiso.estado:
@@ -145,7 +160,7 @@ def exportar_pdf_permiso(request, id):
         parent=styles["Normal"],
         fontName="Helvetica-Bold",
         fontSize=12,
-        alignment=1, # Centrado
+        alignment=1,
         textColor=colors.HexColor("#003366")
     )
     
@@ -187,7 +202,7 @@ def exportar_pdf_permiso(request, id):
     elementos = []
 
     # Encabezado Institucional
-    elementos.append(Paragraph("INSTITUTO SUPERIOR TECNOLÓGICO TECNOECUATORIANO", estilo_titulo_inst))
+    elementos.append(Paragraph("INSTITUTO SUPERIOR TECNOLOGICO TECNOECUATORIANO", estilo_titulo_inst))
     elementos.append(Paragraph("SISTEMA INSTITUCIONAL EVA2", estilo_subtitulo_inst))
     elementos.append(Spacer(1, 10))
     elementos.append(Paragraph("SOLICITUD DE PERMISO", estilo_titulo_doc))
@@ -196,23 +211,23 @@ def exportar_pdf_permiso(request, id):
     f_inicio = permiso.fecha_inicio.strftime("%d/%m/%Y") if getattr(permiso, 'fecha_inicio', None) else "-"
     f_fin = permiso.fecha_fin.strftime("%d/%m/%Y") if getattr(permiso, 'fecha_fin', None) else "-"
 
-    # Matriz de la tabla principal de datos
+    # Matriz de la tabla principal de datos con texto limpiado
     tabla_data = [
         [
-            Paragraph("<b>N.º de solicitud</b>", estilo_celda_bold),
-            Paragraph(str(permiso.id), estilo_celda),
+            Paragraph("<b>N. Solicitud</b>", estilo_celda_bold),
+            Paragraph(limpiar_texto(permiso.id), estilo_celda),
             Paragraph("<b>Estado</b>", estilo_celda_bold),
-            Paragraph(str(permiso.estado), estilo_celda)
+            Paragraph(limpiar_texto(permiso.estado), estilo_celda)
         ],
         [
             Paragraph("<b>Estudiante</b>", estilo_celda_bold),
-            Paragraph(str(permiso.estudiante), estilo_celda),
+            Paragraph(limpiar_texto(permiso.estudiante), estilo_celda),
             Paragraph("<b>Carrera</b>", estilo_celda_bold),
-            Paragraph(str(getattr(permiso, 'carrera', 'N/A')), estilo_celda)
+            Paragraph(limpiar_texto(getattr(permiso, 'carrera', 'N/A')), estilo_celda)
         ],
         [
             Paragraph("<b>Docente</b>", estilo_celda_bold),
-            Paragraph(str(getattr(permiso, 'docente', 'N/A')), estilo_celda),
+            Paragraph(limpiar_texto(getattr(permiso, 'docente', 'N/A')), estilo_celda),
             Paragraph("<b>Fecha Inicio</b>", estilo_celda_bold),
             Paragraph(f_inicio, estilo_celda)
         ],
@@ -237,12 +252,12 @@ def exportar_pdf_permiso(request, id):
     elementos.append(t_principal)
     elementos.append(Spacer(1, 15))
 
-    # Sección Motivo / Observaciones
+    # Sección Motivo
     motivo_texto = getattr(permiso, 'motivo', None) or getattr(permiso, 'descripcion', 'Sin motivo especificado.')
     
     tabla_motivo_data = [
         [Paragraph("<b>MOTIVO DE LA SOLICITUD</b>", estilo_celda_bold)],
-        [Paragraph(str(motivo_texto), estilo_celda)]
+        [Paragraph(limpiar_texto(motivo_texto), estilo_celda)]
     ]
     
     t_motivo = Table(tabla_motivo_data, colWidths=[540])
@@ -264,7 +279,7 @@ def exportar_pdf_permiso(request, id):
         alignment=1,
         textColor=colors.gray
     )
-    elementos.append(Paragraph("Documento generado automáticamente por el Sistema Institucional EVA2.", estilo_pie))
+    elementos.append(Paragraph("Documento generado automaticamente por el Sistema Institucional EVA2.", estilo_pie))
 
     doc.build(elementos)
     return response
