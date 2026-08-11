@@ -1,3 +1,4 @@
+import unicodedata
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import HttpResponse
@@ -15,20 +16,31 @@ from .models import Permiso
 from .forms import PermisoForm
 
 
-def limpiar_texto(texto):
-    """Limpia caracteres especiales y tildes para evitar cuadros negros en ReportLab."""
-    if not texto:
-        return ""
+def normalizar_texto(val):
+    """
+    Convierte cualquier objeto o texto a una cadena limpia sin tildes ni caracteres
+    especiales que corrompan el PDF de ReportLab.
+    """
+    if val is None:
+        return "-"
     
-    reemplazos = {
-        'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u',
-        'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U',
-        'ñ': 'ñ', 'Ñ': 'Ñ', 'º': '.', '°': '.'
-    }
-    texto_str = str(texto)
+    # Si es un objeto de Django (User, etc.), extraemos su nombre real
+    if hasattr(val, 'get_full_name') and callable(val.get_full_name):
+        val = val.get_full_name() or getattr(val, 'username', str(val))
+    
+    texto = str(val)
+    # Elimina tildes y acentos convirtiendo caracteres especiales a ASCII puro
+    texto_sin_tildes = ''.join(
+        c for c in unicodedata.normalize('NFD', texto)
+        if unicodedata.category(c) != 'Mn'
+    )
+    
+    # Limpieza final de caracteres extraños que causan cuadros negros
+    reemplazos = {'º': '.', '°': '.', 'ª': '.'}
     for orig, reemp in reemplazos.items():
-        texto_str = texto_str.replace(orig, reemp)
-    return texto_str
+        texto_sin_tildes = texto_sin_tildes.replace(orig, reemp)
+        
+    return texto_sin_tildes
 
 
 def lista_permisos(request):
@@ -154,7 +166,6 @@ def exportar_pdf_permiso(request, id):
 
     styles = getSampleStyleSheet()
     
-    # Estilos de texto
     estilo_titulo_inst = ParagraphStyle(
         "TituloInst",
         parent=styles["Normal"],
@@ -211,23 +222,23 @@ def exportar_pdf_permiso(request, id):
     f_inicio = permiso.fecha_inicio.strftime("%d/%m/%Y") if getattr(permiso, 'fecha_inicio', None) else "-"
     f_fin = permiso.fecha_fin.strftime("%d/%m/%Y") if getattr(permiso, 'fecha_fin', None) else "-"
 
-    # Matriz de la tabla principal de datos con texto limpiado
+    # Matriz con normalización de caracteres
     tabla_data = [
         [
             Paragraph("<b>N. Solicitud</b>", estilo_celda_bold),
-            Paragraph(limpiar_texto(permiso.id), estilo_celda),
+            Paragraph(normalizar_texto(permiso.id), estilo_celda),
             Paragraph("<b>Estado</b>", estilo_celda_bold),
-            Paragraph(limpiar_texto(permiso.estado), estilo_celda)
+            Paragraph(normalizar_texto(permiso.estado), estilo_celda)
         ],
         [
             Paragraph("<b>Estudiante</b>", estilo_celda_bold),
-            Paragraph(limpiar_texto(permiso.estudiante), estilo_celda),
+            Paragraph(normalizar_texto(permiso.estudiante), estilo_celda),
             Paragraph("<b>Carrera</b>", estilo_celda_bold),
-            Paragraph(limpiar_texto(getattr(permiso, 'carrera', 'N/A')), estilo_celda)
+            Paragraph(normalizar_texto(getattr(permiso, 'carrera', 'N/A')), estilo_celda)
         ],
         [
             Paragraph("<b>Docente</b>", estilo_celda_bold),
-            Paragraph(limpiar_texto(getattr(permiso, 'docente', 'N/A')), estilo_celda),
+            Paragraph(normalizar_texto(getattr(permiso, 'docente', 'N/A')), estilo_celda),
             Paragraph("<b>Fecha Inicio</b>", estilo_celda_bold),
             Paragraph(f_inicio, estilo_celda)
         ],
@@ -239,7 +250,6 @@ def exportar_pdf_permiso(request, id):
         ],
     ]
 
-    # Diseño visual de la cuadrícula
     t_principal = Table(tabla_data, colWidths=[110, 160, 110, 160])
     t_principal.setStyle(TableStyle([
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#CCCCCC")),
@@ -257,7 +267,7 @@ def exportar_pdf_permiso(request, id):
     
     tabla_motivo_data = [
         [Paragraph("<b>MOTIVO DE LA SOLICITUD</b>", estilo_celda_bold)],
-        [Paragraph(limpiar_texto(motivo_texto), estilo_celda)]
+        [Paragraph(normalizar_texto(motivo_texto), estilo_celda)]
     ]
     
     t_motivo = Table(tabla_motivo_data, colWidths=[540])
@@ -270,7 +280,6 @@ def exportar_pdf_permiso(request, id):
     elementos.append(t_motivo)
     elementos.append(Spacer(1, 20))
 
-    # Pie de página informativo
     estilo_pie = ParagraphStyle(
         "Pie",
         parent=styles["Normal"],
