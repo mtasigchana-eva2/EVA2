@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import HttpResponse
 from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 
 # ReportLab para generar el PDF en tabla estructurada
@@ -43,8 +44,49 @@ def normalizar_texto(val):
     return texto_sin_tildes
 
 
+@login_required
 def lista_permisos(request):
-    permisos = Permiso.objects.all().order_by("-fecha_solicitud")
+    usuario = request.user
+    
+    # Obtenemos el perfil del usuario conectado (si existe)
+    perfil = getattr(usuario, 'perfil', None)
+    rol = perfil.rol if perfil else None
+
+    # 1. ROLES ADMINISTRATIVOS Y SUPERADMINISTRADOR
+    # Ven absolutamente TODAS las solicitudes de todos los usuarios
+    if usuario.is_superuser or rol in [
+        "Superadministrador",
+        "Administrador Talleres",
+        "Coordinador Carrera",
+        "Coordinador Talleres",
+    ]:
+        permisos = Permiso.objects.all().order_by("-fecha_solicitud")
+
+    # 2. DOCENTE / PROFESOR
+    # Solo ve las solicitudes de su misma carrera
+    elif rol == "Docente":
+        carrera_docente = perfil.carrera.nombre if (perfil and perfil.carrera) else None
+        
+        if carrera_docente:
+            permisos = Permiso.objects.filter(
+                carrera__iexact=carrera_docente
+            ).order_by("-fecha_solicitud")
+        else:
+            permisos = Permiso.objects.none()
+
+    # 3. ESTUDIANTE (Y cualquier otro usuario)
+    # Solo ve sus propias solicitudes
+    else:
+        nombre_completo = usuario.get_full_name()
+        
+        filtros = Q(estudiante__iexact=usuario.username)
+        if nombre_completo:
+            filtros |= Q(estudiante__iexact=nombre_completo)
+        if usuario.first_name:
+            filtros |= Q(estudiante__icontains=usuario.first_name)
+
+        permisos = Permiso.objects.filter(filtros).order_by("-fecha_solicitud")
+
     return render(
         request,
         "permisos/index.html",
@@ -52,6 +94,7 @@ def lista_permisos(request):
     )
 
 
+@login_required
 def nuevo_permiso(request):
     if request.method == "POST":
         formulario = PermisoForm(request.POST, request.FILES)
@@ -108,6 +151,7 @@ def nuevo_permiso(request):
     )
 
 
+@login_required
 def editar_permiso(request, id):
     permiso = get_object_or_404(Permiso, id=id)
 
@@ -142,6 +186,7 @@ def editar_permiso(request, id):
     )
 
 
+@login_required
 def eliminar_permiso(request, id):
     permiso = get_object_or_404(Permiso, id=id)
     permiso.delete()
@@ -149,6 +194,7 @@ def eliminar_permiso(request, id):
     return redirect("lista_permisos")
 
 
+@login_required
 def exportar_pdf_permiso(request, id):
     permiso = get_object_or_404(Permiso, id=id)
 
