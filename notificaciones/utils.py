@@ -22,7 +22,7 @@ def enviar_notificacion_y_correo(usuario, titulo, mensaje, url_destino=""):
     if usuario.email:
         try:
             send_mail(
-                subject=f"[EVA2] {titulo}",
+                subject=f"[SEMGA] {titulo}",
                 message=mensaje,
                 from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', None),
                 recipient_list=[usuario.email],

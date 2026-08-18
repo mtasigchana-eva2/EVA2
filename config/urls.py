@@ -8,7 +8,7 @@ urlpatterns = [
     # Administración por defecto de Django
     path("admin/", admin.site.urls),
 
-    # Aplicaciones del Sistema EVA2
+    # Aplicaciones del Sistema SEMGA
     path("", include("usuarios.urls")),
     path("usuarios-admin/", include("gestion_usuarios.urls")),
     path("carreras/", include("carreras.urls")),

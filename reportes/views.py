@@ -187,7 +187,7 @@ def _generar_pdf_base(response, titulo_documento, datos_tabla, motivo, observaci
 
     # Encabezado Institucional
     contenido.append(Paragraph("INSTITUTO SUPERIOR TECNOLÓGICO TECNOECUATORIANO", estilo_titulo))
-    contenido.append(Paragraph("SISTEMA INSTITUCIONAL EVA2", estilo_subtitulo))
+    contenido.append(Paragraph("SISTEMA INSTITUCIONAL SEMGA", estilo_subtitulo))
     contenido.append(Paragraph(titulo_documento, estilo_titulo))
     contenido.append(Spacer(1, 0.4 * cm))
 
@@ -263,7 +263,7 @@ def _generar_pdf_base(response, titulo_documento, datos_tabla, motivo, observaci
     contenido.append(Spacer(1, 0.4 * cm))
     contenido.append(
         Paragraph(
-            "Documento generado automáticamente por el Sistema Institucional EVA2.",
+            "Documento generado automáticamente por el Sistema Institucional SEMGA.",
             ParagraphStyle(
                 "Pie",
                 parent=estilos["Normal"],

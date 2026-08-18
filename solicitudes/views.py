@@ -255,7 +255,7 @@ def exportar_pdf_solicitud(request, id):
 
     # Encabezado Institucional
     elementos.append(Paragraph("INSTITUTO SUPERIOR TECNOLOGICO TECNOECUATORIANO", estilo_titulo_inst))
-    elementos.append(Paragraph("SISTEMA INSTITUCIONAL EVA2", estilo_subtitulo_inst))
+    elementos.append(Paragraph("SISTEMA INSTITUCIONAL SEMGA", estilo_subtitulo_inst))
     elementos.append(Spacer(1, 10))
     elementos.append(Paragraph("SOLICITUD DE LABORATORIO", estilo_titulo_doc))
 
@@ -344,7 +344,7 @@ def exportar_pdf_solicitud(request, id):
         alignment=1,
         textColor=colors.gray
     )
-    elementos.append(Paragraph("Documento generado automaticamente por el Sistema Institucional EVA2.", estilo_pie))
+    elementos.append(Paragraph("Documento generado automaticamente por el Sistema Institucional SEMGA.", estilo_pie))
 
     doc.build(elementos)
     return response
