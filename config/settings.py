@@ -185,4 +185,4 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'mtasigchanam@unemi.edu.ec'
 EMAIL_HOST_PASSWORD = 'bhibjaewhlmyfkdz'
-DEFAULT_FROM_EMAIL = 'Sistema EVA2 <mtasigchanam@unemi.edu.ec>'
+DEFAULT_FROM_EMAIL = 'Sistema SEMGA <mtasigchanam@unemi.edu.ec>'
