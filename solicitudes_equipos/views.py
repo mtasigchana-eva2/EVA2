@@ -56,34 +56,67 @@ def nueva_solicitud_equipo(request):
 
         if formulario.is_valid():
             solicitud = formulario.save(commit=False)
-            
+
             # Estado Pendiente forzado por defecto
-            if not request.user.is_superuser and (not hasattr(request.user, 'perfil') or request.user.perfil.rol == 'Estudiante'):
+            if (
+                not request.user.is_superuser
+                and (
+                    not hasattr(request.user, "perfil")
+                    or request.user.perfil.rol == "Estudiante"
+                )
+            ):
                 solicitud.estado = "Pendiente"
             elif not solicitud.estado:
                 solicitud.estado = "Pendiente"
-                
+
+            # Primero guardamos la solicitud
             solicitud.save()
 
-            destinatarios = list(User.objects.filter(
-                Q(perfil__rol__iexact='Docente') |
-                Q(perfil__rol__iexact='Administrador Talleres') |
-                Q(perfil__rol__iexact='Coordinador Talleres') |
-                Q(perfil__rol__iexact='Coordinador Carrera') |
-                Q(perfil__rol__iexact='Superadministrador') |
-                Q(is_superuser=True)
-            ).distinct())
-
-            for destinatario in destinatarios:
-                enviar_notificacion_y_correo(
-                    usuario=destinatario,
-                    titulo="Nueva Solicitud de Equipo 💻",
-                    mensaje=f"El estudiante {solicitud.estudiante} solicitó el equipo {solicitud.equipo}.",
-                    url_destino="/solicitudes-equipos/"
+            # Las notificaciones NO deben impedir que la solicitud
+            # se registre correctamente.
+            try:
+                destinatarios = list(
+                    User.objects.filter(
+                        Q(perfil__rol__iexact="Docente")
+                        | Q(perfil__rol__iexact="Administrador Talleres")
+                        | Q(perfil__rol__iexact="Coordinador Talleres")
+                        | Q(perfil__rol__iexact="Coordinador Carrera")
+                        | Q(perfil__rol__iexact="Superadministrador")
+                        | Q(is_superuser=True)
+                    ).distinct()
                 )
 
-            messages.success(request, "Solicitud registrada correctamente.")
+                for destinatario in destinatarios:
+                    try:
+                        enviar_notificacion_y_correo(
+                            usuario=destinatario,
+                            titulo="Nueva Solicitud de Equipo 💻",
+                            mensaje=(
+                                f"El estudiante {solicitud.estudiante} "
+                                f"solicitó el equipo {solicitud.equipo}."
+                            ),
+                            url_destino="/solicitudes-equipos/",
+                        )
+                    except Exception as error_notificacion:
+                        print(
+                            "ERROR AL ENVIAR NOTIFICACIÓN DE SOLICITUD "
+                            f"DE EQUIPO: {error_notificacion}"
+                        )
+
+            except Exception as error_general:
+                print(
+                    "ERROR GENERAL EN NOTIFICACIONES DE SOLICITUD "
+                    f"DE EQUIPO: {error_general}"
+                )
+
+            # La solicitud ya está guardada aunque falle una notificación
+            messages.success(
+                request,
+                "Solicitud registrada correctamente."
+            )
+
             return redirect("lista_solicitudes_equipos")
+
     else:
         formulario = SolicitudEquipoForm()
 
