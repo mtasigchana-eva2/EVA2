@@ -6,7 +6,6 @@ class SolicitudEquipoForm(forms.ModelForm):
 
     class Meta:
         model = SolicitudEquipo
-        # Se elimina 'estado' de la lista
         fields = [
             "estudiante",
             "carrera",

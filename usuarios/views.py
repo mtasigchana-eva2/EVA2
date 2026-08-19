@@ -13,7 +13,7 @@ from carreras.models import Carrera
 from sedes.models import Sede
 from inventario.models import Inventario
 from herramientas.models import Herramienta
-from solicitudes.models import Solicitud
+from solicitudes.models import Solicitud # ✅ Corregido aquí
 
 
 def registro(request):
@@ -31,7 +31,6 @@ def registro(request):
             messages.warning(request, "⚠ Por favor, completa tu perfil institucional.")
             return redirect("perfil")
         else:
-            # IMPRIME ERRORES EN LA TERMINAL PARA SABER QUÉ RECHAZÓ DJANGO
             print("--- ERROR DE VALIDACIÓN EN REGISTRO ---")
             print(formulario.errors)
             messages.error(request, "Por favor corrige los errores del formulario.")
@@ -75,8 +74,8 @@ def dashboard(request):
         "total_sedes": Sede.objects.count(),
         "total_inventario": Inventario.objects.count(),
         "total_herramientas": Herramienta.objects.count(),
-        "total_solicitudes": Solicitud.objects.count(),
-        "ultimas": Solicitud.objects.order_by("-id")[:5],
+        "total_solicitudes": SolicitudEquipo.objects.count(),  # ✅ Corregido aquí
+        "ultimas": SolicitudEquipo.objects.order_by("-id")[:5], # ✅ Corregido aquí
     }
     
     return render(

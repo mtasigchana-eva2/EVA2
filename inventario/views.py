@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import InventarioForm
 from .models import Inventario
+
 from usuarios.permisos import (
     puede_agregar_inventario,
     puede_editar_inventario,
@@ -16,13 +17,18 @@ def lista_inventario(request):
 
     buscar = request.GET.get("buscar", "")
 
-    inventario = Inventario.objects.all()
+    inventario = Inventario.objects.select_related(
+        "carrera",
+        "sede"
+    ).all()
 
     if buscar:
         inventario = inventario.filter(
             Q(codigo__icontains=buscar) |
             Q(nombre__icontains=buscar) |
-            Q(categoria__icontains=buscar)
+            Q(categoria__icontains=buscar) |
+            Q(sede__nombre__icontains=buscar) |
+            Q(sede__ciudad__icontains=buscar)
         )
 
     return render(
@@ -51,7 +57,17 @@ def crear_inventario(request):
 
         if formulario.is_valid():
 
-            formulario.save()
+            item = formulario.save(commit=False)
+
+            # Al registrar un nuevo inventario,
+            # todas las unidades comienzan disponibles.
+            item.cantidad_prestada = 0
+            item.cantidad_mantenimiento = 0
+            item.cantidad_danada = 0
+
+            item.estado = "Disponible"
+
+            item.save()
 
             messages.success(
                 request,
@@ -59,9 +75,6 @@ def crear_inventario(request):
             )
 
             return redirect("lista_inventario")
-
-        else:  # Este es el cambio que solicitaste
-            print(formulario.errors)
 
     else:
 
@@ -98,7 +111,19 @@ def editar_inventario(request, id):
 
         if formulario.is_valid():
 
-            formulario.save()
+            item_actualizado = formulario.save(commit=False)
+
+            # No modificar aquí las cantidades de préstamos,
+            # mantenimiento o daños.
+            #
+            # Esos valores serán controlados por las operaciones
+            # correspondientes del sistema.
+
+            item_actualizado.cantidad_prestada = item.cantidad_prestada
+            item_actualizado.cantidad_mantenimiento = item.cantidad_mantenimiento
+            item_actualizado.cantidad_danada = item.cantidad_danada
+
+            item_actualizado.save()
 
             messages.success(
                 request,
@@ -106,7 +131,6 @@ def editar_inventario(request, id):
             )
 
             return redirect("lista_inventario")
-        
 
     else:
 

@@ -16,32 +16,26 @@ class Solicitud(models.Model):
     estudiante = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name="solicitudes_laboratorio"
+        related_name="solicitudes_laboratorio_estudiante"  # <-- Nombre único
     )
 
     carrera = models.ForeignKey(
         Carrera,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="solicitudes_laboratorio_carrera"     # <-- Agregado único
     )
 
     sede = models.ForeignKey(
         Sede,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="solicitudes_laboratorio_sede"        # <-- Agregado único
     )
 
-    # Se cambia de ForeignKey a CharField para eliminar la dependencia de la app laboratorios
-    laboratorio = models.CharField(
-        max_length=150
-    )
-
-    docente = models.CharField(
-        max_length=150
-    )
+    laboratorio = models.CharField(max_length=150)
+    docente = models.CharField(max_length=150)
 
     fecha = models.DateField()
-
     hora_inicio = models.TimeField()
-
     hora_fin = models.TimeField()
 
     motivo = models.TextField()
@@ -71,9 +65,7 @@ class Solicitud(models.Model):
         null=True
     )
 
-    observacion = models.TextField(
-        blank=True
-    )
+    observacion = models.TextField(blank=True)
 
     def __str__(self):
         return f"{self.estudiante.username} - {self.laboratorio}"

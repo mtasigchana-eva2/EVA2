@@ -4,112 +4,486 @@
 
 <div class="container mt-4">
 
+    <!-- ENCABEZADO -->
     <div class="d-flex justify-content-between align-items-center mb-2">
-        <h2 class="fw-bold m-0">Gestión de Inventario</h2>
+
+        <h2 class="fw-bold m-0">
+            Gestión de Inventario
+        </h2>
+
         {% if request.user.perfil %}
             <span class="badge bg-secondary p-2">
-                Rol: <strong>{{ request.user.perfil.get_rol_display }}</strong>
+                Rol:
+                <strong>
+                    {{ request.user.perfil.get_rol_display }}
+                </strong>
             </span>
         {% endif %}
+
     </div>
 
-    <!-- Bloque de Mensajes / Alertas -->
+
+    <!-- MENSAJES -->
     {% if messages %}
+
         {% for message in messages %}
-            <div class="alert alert-success alert-dismissible fade show shadow-sm mt-3" role="alert">
+
+            <div
+                class="alert alert-success alert-dismissible fade show shadow-sm mt-3"
+                role="alert"
+            >
+
                 {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close"
+                ></button>
+
             </div>
+
         {% endfor %}
+
     {% endif %}
+
 
     <hr>
 
-    <!-- Oculta botón "Nuevo Equipo" si es Estudiante -->
+
+    <!-- BOTÓN NUEVO EQUIPO -->
     {% if request.user.is_superuser or request.user.perfil.rol != 'Estudiante' %}
-        <a href="{% url 'nuevo_inventario' %}" class="btn btn-primary mb-3 shadow-sm">
+
+        <a
+            href="{% url 'nuevo_inventario' %}"
+            class="btn btn-primary mb-3 shadow-sm"
+        >
             ➕ Nuevo Equipo
         </a>
+
     {% endif %}
 
-    <!-- Formulario de Búsqueda -->
+
+    <!-- BUSCADOR -->
     <form method="GET" class="row mb-3 g-2">
+
         <div class="col-md-5">
+
             <input
                 type="text"
                 name="buscar"
                 value="{{ buscar|default:'' }}"
                 class="form-control"
-                placeholder="Buscar por código, nombre o categoría">
+                placeholder="Buscar por código, nombre, categoría o sede"
+            >
+
         </div>
 
+
         <div class="col-md-2">
-            <button type="submit" class="btn btn-primary w-100">
+
+            <button
+                type="submit"
+                class="btn btn-primary w-100"
+            >
                 🔍 Buscar
             </button>
+
         </div>
+
 
         <div class="col-md-2">
-            <a href="{% url 'lista_inventario' %}" class="btn btn-secondary w-100">
+
+            <a
+                href="{% url 'lista_inventario' %}"
+                class="btn btn-secondary w-100"
+            >
                 Limpiar
             </a>
+
         </div>
+
     </form>
 
-    <!-- Tabla de Productos -->
+
+    <!-- TABLA -->
     <div class="table-responsive">
+
         <table class="table table-striped table-hover shadow-sm align-middle">
+
             <thead class="table-dark">
+
                 <tr>
+
                     <th>Código</th>
+
                     <th>Nombre</th>
+
                     <th>Categoría</th>
+
                     <th>Carrera</th>
-                    <th>Cantidad</th>
-                    <th>Estado</th>
-                    <th class="text-center">Acciones</th>
+
+                    <th>Sede</th>
+
+                    <th class="text-center">
+                        Total
+                    </th>
+
+                    <th class="text-center">
+                        Disponible
+                    </th>
+
+                    <th class="text-center">
+                        Prestado
+                    </th>
+
+                    <th class="text-center">
+                        Mantenimiento
+                    </th>
+
+                    <th class="text-center">
+                        Dañado
+                    </th>
+
+                    <th>
+                        Estado
+                    </th>
+
+                    <th class="text-center">
+                        Acciones
+                    </th>
+
                 </tr>
+
             </thead>
+
+
             <tbody>
+
                 {% for equipo in inventario %}
+
                     <tr>
-                        <td><strong>{{ equipo.codigo }}</strong></td>
-                        <td>{{ equipo.nombre }}</td>
-                        <td>{{ equipo.categoria }}</td>
-                        <td>{{ equipo.carrera.nombre|default:equipo.carrera }}</td>
-                        <td>{{ equipo.cantidad }}</td>
+
+                        <!-- CÓDIGO -->
                         <td>
-                            <span class="badge bg-info text-dark">
-                                {{ equipo.estado }}
-                            </span>
+                            <strong>
+                                {{ equipo.codigo }}
+                            </strong>
                         </td>
+
+
+                        <!-- NOMBRE -->
+                        <td>
+                            {{ equipo.nombre }}
+                        </td>
+
+
+                        <!-- CATEGORÍA -->
+                        <td>
+                            {{ equipo.categoria }}
+                        </td>
+
+
+                        <!-- CARRERA -->
+                        <td>
+                            {{ equipo.carrera.nombre|default:equipo.carrera }}
+                        </td>
+
+
+                        <!-- SEDE -->
+                        <td>
+
+                            <span class="badge bg-primary">
+
+                                {{ equipo.sede.nombre }}
+
+                            </span>
+
+                            <br>
+
+                            <small class="text-muted">
+
+                                {{ equipo.sede.ciudad }}
+
+                            </small>
+
+                        </td>
+
+
+                        <!-- TOTAL -->
                         <td class="text-center">
-                            <!-- Solo Admin Talleres o Superadmin ven Editar/Eliminar -->
+
+                            <span class="badge bg-dark fs-6">
+
+                                {{ equipo.cantidad }}
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- DISPONIBLE -->
+                        <td class="text-center">
+
+                            {% if equipo.cantidad_disponible > 0 %}
+
+                                <span class="badge bg-success fs-6">
+
+                                    {{ equipo.cantidad_disponible }}
+
+                                </span>
+
+                            {% else %}
+
+                                <span class="badge bg-danger fs-6">
+
+                                    0
+
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <!-- PRESTADO -->
+                        <td class="text-center">
+
+                            <span class="badge bg-warning text-dark fs-6">
+
+                                {{ equipo.cantidad_prestada }}
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- MANTENIMIENTO -->
+                        <td class="text-center">
+
+                            <span class="badge bg-secondary fs-6">
+
+                                {{ equipo.cantidad_mantenimiento }}
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- DAÑADO -->
+                        <td class="text-center">
+
+                            <span class="badge bg-danger fs-6">
+
+                                {{ equipo.cantidad_danada }}
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- ESTADO GENERAL -->
+                        <td>
+
+                            {% if equipo.cantidad_disponible > 0 %}
+
+                                <span class="badge bg-success">
+
+                                    Disponible
+
+                                </span>
+
+                            {% elif equipo.cantidad_prestada > 0 %}
+
+                                <span class="badge bg-warning text-dark">
+
+                                    Prestado
+
+                                </span>
+
+                            {% elif equipo.cantidad_mantenimiento > 0 %}
+
+                                <span class="badge bg-secondary">
+
+                                    Mantenimiento
+
+                                </span>
+
+                            {% elif equipo.cantidad_danada > 0 %}
+
+                                <span class="badge bg-danger">
+
+                                    Dañado
+
+                                </span>
+
+                            {% else %}
+
+                                <span class="badge bg-dark">
+
+                                    Sin disponibilidad
+
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <!-- ACCIONES -->
+                        <td class="text-center">
+
                             {% if request.user.is_superuser or request.user.perfil.rol == 'Superadministrador' or request.user.perfil.rol == 'Administrador Talleres' %}
-                                <a href="{% url 'editar_inventario' equipo.id %}" class="btn btn-warning btn-sm me-1">
+
+                                <a
+                                    href="{% url 'editar_inventario' equipo.id %}"
+                                    class="btn btn-warning btn-sm me-1"
+                                >
                                     ✏️ Editar
                                 </a>
-                                <a href="{% url 'eliminar_inventario' equipo.id %}" class="btn btn-danger btn-sm" onclick="return confirm('¿Está seguro de que desea eliminar este equipo?');">
+
+
+                                <a
+                                    href="{% url 'eliminar_inventario' equipo.id %}"
+                                    class="btn btn-danger btn-sm"
+                                    onclick="return confirm('¿Está seguro de que desea eliminar este equipo?');"
+                                >
                                     🗑️ Eliminar
                                 </a>
+
                             {% else %}
-                                <span class="text-muted small">Sin acciones</span>
+
+                                <span class="text-muted small">
+                                    Sin acciones
+                                </span>
+
                             {% endif %}
+
                         </td>
+
                     </tr>
+
+
                 {% empty %}
+
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4">
+
+                        <td
+                            colspan="12"
+                            class="text-center text-muted py-4"
+                        >
+
                             {% if buscar %}
-                                No se encontraron resultados para "<strong>{{ buscar }}</strong>".
+
+                                No se encontraron resultados para
+                                "<strong>{{ buscar }}</strong>".
+
                             {% else %}
+
                                 No existen equipos registrados.
+
                             {% endif %}
+
                         </td>
+
                     </tr>
+
                 {% endfor %}
+
             </tbody>
+
         </table>
+
+    </div>
+
+
+    <!-- RESUMEN GENERAL -->
+    <div class="row mt-4">
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card shadow-sm border-dark">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Registros de inventario
+                    </h6>
+
+                    <h3 class="fw-bold">
+                        {{ inventario|length }}
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card shadow-sm border-success">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Disponibles
+                    </h6>
+
+                    <p class="small text-muted mb-0">
+                        Control individual por sede
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card shadow-sm border-warning">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Prestados
+                    </h6>
+
+                    <p class="small text-muted mb-0">
+                        Unidades actualmente prestadas
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card shadow-sm border-primary">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Control por sede
+                    </h6>
+
+                    <p class="small text-muted mb-0">
+                        Pifo, Quito, Guayaquil, Santa Elena, etc.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
 
 </div>

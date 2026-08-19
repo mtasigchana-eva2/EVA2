@@ -7,12 +7,10 @@ from sedes.models import Sede
 class Inventario(models.Model):
 
     ESTADOS = [
-
         ("Disponible", "Disponible"),
         ("Prestado", "Prestado"),
         ("Mantenimiento", "Mantenimiento"),
         ("Dañado", "Dañado"),
-
     ]
 
     codigo = models.CharField(
@@ -38,8 +36,24 @@ class Inventario(models.Model):
         on_delete=models.CASCADE
     )
 
+    # Cantidad total registrada en esta sede
     cantidad = models.PositiveIntegerField(
         default=1
+    )
+
+    # Cantidad actualmente prestada
+    cantidad_prestada = models.PositiveIntegerField(
+        default=0
+    )
+
+    # Cantidad actualmente en mantenimiento
+    cantidad_mantenimiento = models.PositiveIntegerField(
+        default=0
+    )
+
+    # Cantidad registrada como dañada
+    cantidad_danada = models.PositiveIntegerField(
+        default=0
     )
 
     estado = models.CharField(
@@ -51,6 +65,20 @@ class Inventario(models.Model):
     observacion = models.TextField(
         blank=True
     )
+
+    @property
+    def cantidad_disponible(self):
+        """
+        Calcula automáticamente las unidades disponibles.
+        """
+        disponible = (
+            self.cantidad
+            - self.cantidad_prestada
+            - self.cantidad_mantenimiento
+            - self.cantidad_danada
+        )
+
+        return max(disponible, 0)
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
