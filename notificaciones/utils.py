@@ -3,28 +3,21 @@ from django.conf import settings
 from .models import Notificacion
 
 
-def enviar_notificacion_y_correo(
-    usuario,
-    titulo,
-    mensaje,
-    url_destino=""
-):
+def enviar_notificacion_y_correo(usuario, titulo, mensaje, url_destino=""):
     """
-    Crea una notificación interna y, si es posible,
-    envía también un correo electrónico.
+    Crea una notificación interna y, si el usuario tiene correo,
+    intenta enviarle un correo electrónico.
 
-    Los errores de notificación o correo no deben
-    impedir que la operación principal continúe.
+    Los errores de notificación o correo no deben impedir
+    que la solicitud principal se complete.
     """
 
-    # Si no existe usuario, simplemente no hacemos nada.
     if not usuario:
         return
 
     # ==========================================================
     # 1. CREAR NOTIFICACIÓN INTERNA
     # ==========================================================
-
     try:
         Notificacion.objects.create(
             usuario=usuario,
@@ -32,7 +25,6 @@ def enviar_notificacion_y_correo(
             mensaje=mensaje,
             url_destino=url_destino
         )
-
     except Exception as e:
         print("==========================================")
         print("ERROR AL CREAR NOTIFICACIÓN")
@@ -42,13 +34,12 @@ def enviar_notificacion_y_correo(
         print("==========================================")
 
     # ==========================================================
-    # 2. ENVIAR CORREO ELECTRÓNICO
+    # 2. ENVIAR CORREO
     # ==========================================================
-
     if usuario.email:
         try:
             send_mail(
-                subject=f"[SEMGA] {titulo}",
+                subject=f"[EVA2] {titulo}",
                 message=mensaje,
                 from_email=getattr(
                     settings,
@@ -66,11 +57,3 @@ def enviar_notificacion_y_correo(
             print(f"Correo: {usuario.email}")
             print(f"Error: {e}")
             print("==========================================")
-
-    # ==========================================================
-    # IMPORTANTE:
-    # Esta función nunca debe detener la creación
-    # de la solicitud principal.
-    # ==========================================================
-
-    return
