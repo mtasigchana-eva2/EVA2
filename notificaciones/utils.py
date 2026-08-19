@@ -3,12 +3,17 @@ from django.conf import settings
 from .models import Notificacion
 
 
-def enviar_notificacion_y_correo(usuario, titulo, mensaje, url_destino=""):
+def enviar_notificacion_y_correo(
+    usuario,
+    titulo,
+    mensaje,
+    url_destino=""
+):
     """
     Crea una notificación interna y, si el usuario tiene correo,
     intenta enviarle un correo electrónico.
 
-    Los errores de notificación o correo no deben impedir
+    Los errores de notificación o correo NO deben impedir
     que la solicitud principal se complete.
     """
 
@@ -25,6 +30,7 @@ def enviar_notificacion_y_correo(usuario, titulo, mensaje, url_destino=""):
             mensaje=mensaje,
             url_destino=url_destino
         )
+
     except Exception as e:
         print("==========================================")
         print("ERROR AL CREAR NOTIFICACIÓN")
@@ -37,6 +43,7 @@ def enviar_notificacion_y_correo(usuario, titulo, mensaje, url_destino=""):
     # 2. ENVIAR CORREO
     # ==========================================================
     if usuario.email:
+
         try:
             send_mail(
                 subject=f"[EVA2] {titulo}",
@@ -47,7 +54,15 @@ def enviar_notificacion_y_correo(usuario, titulo, mensaje, url_destino=""):
                     None
                 ),
                 recipient_list=[usuario.email],
+
+                # IMPORTANTE:
+                # Si el servidor SMTP falla, Django no debe
+                # lanzar la excepción hacia la solicitud principal.
                 fail_silently=True,
+
+                # Timeout corto para evitar que Render
+                # bloquee el worker esperando a Gmail.
+                timeout=5,
             )
 
         except Exception as e:
