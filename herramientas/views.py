@@ -5,6 +5,7 @@ from django.http import HttpResponseForbidden
 
 from .models import Herramienta
 from .forms import HerramientaForm
+
 from usuarios.permisos import (
     puede_agregar_inventario,
     puede_editar_inventario,
@@ -13,7 +14,9 @@ from usuarios.permisos import (
 
 
 def lista_herramientas(request):
-    buscar = request.GET.get("buscar")
+
+    buscar = request.GET.get("buscar", "")
+
     herramientas = Herramienta.objects.all()
 
     if buscar:
@@ -24,30 +27,70 @@ def lista_herramientas(request):
             Q(modelo__icontains=buscar)
         )
 
+    # CONTADORES GENERALES DE HERRAMIENTAS
+    total_herramientas = herramientas.count()
+
+    disponibles = herramientas.filter(
+        estado="Disponible"
+    ).count()
+
+    prestadas = herramientas.filter(
+        estado="Prestada"
+    ).count()
+
+    mantenimiento = herramientas.filter(
+        estado="Mantenimiento"
+    ).count()
+
+    danadas = herramientas.filter(
+        estado="Dañada"
+    ).count()
+
     return render(
         request,
         "herramientas/index.html",
         {
             "herramientas": herramientas,
             "buscar": buscar,
+
+            "total_herramientas": total_herramientas,
+            "disponibles": disponibles,
+            "prestadas": prestadas,
+            "mantenimiento": mantenimiento,
+            "danadas": danadas,
         }
     )
 
 
 def nueva_herramienta(request):
+
     if not puede_agregar_inventario(request.user):
-        return HttpResponseForbidden("No tiene permisos para agregar herramientas al inventario.")
+
+        return HttpResponseForbidden(
+            "No tiene permisos para agregar herramientas al inventario."
+        )
 
     if request.method == "POST":
-        formulario = HerramientaForm(request.POST)
+
+        formulario = HerramientaForm(
+            request.POST
+        )
+
         if formulario.is_valid():
+
             formulario.save()
+
             messages.success(
                 request,
                 "Herramienta registrada correctamente."
             )
-            return redirect("lista_herramientas")
+
+            return redirect(
+                "lista_herramientas"
+            )
+
     else:
+
         formulario = HerramientaForm()
 
     return render(
@@ -60,8 +103,12 @@ def nueva_herramienta(request):
 
 
 def editar_herramienta(request, id):
+
     if not puede_editar_inventario(request.user):
-        return HttpResponseForbidden("No tiene permisos para editar este registro.")
+
+        return HttpResponseForbidden(
+            "No tiene permisos para editar este registro."
+        )
 
     herramienta = get_object_or_404(
         Herramienta,
@@ -69,18 +116,27 @@ def editar_herramienta(request, id):
     )
 
     if request.method == "POST":
+
         formulario = HerramientaForm(
             request.POST,
             instance=herramienta
         )
+
         if formulario.is_valid():
+
             formulario.save()
+
             messages.success(
                 request,
                 "Herramienta actualizada correctamente."
             )
-            return redirect("lista_herramientas")
+
+            return redirect(
+                "lista_herramientas"
+            )
+
     else:
+
         formulario = HerramientaForm(
             instance=herramienta
         )
@@ -95,8 +151,12 @@ def editar_herramienta(request, id):
 
 
 def eliminar_herramienta(request, id):
+
     if not puede_eliminar_inventario(request.user):
-        return HttpResponseForbidden("No tiene permisos para eliminar elementos del inventario.")
+
+        return HttpResponseForbidden(
+            "No tiene permisos para eliminar elementos del inventario."
+        )
 
     herramienta = get_object_or_404(
         Herramienta,
@@ -110,4 +170,6 @@ def eliminar_herramienta(request, id):
         "Herramienta eliminada correctamente."
     )
 
-    return redirect("lista_herramientas")
+    return redirect(
+        "lista_herramientas"
+    )

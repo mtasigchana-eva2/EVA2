@@ -4,29 +4,268 @@
 
 <div class="container mt-4">
 
-    <h2>Nueva Solicitud de Herramienta</h2>
+    <div class="card shadow-sm">
 
-    <hr>
+        <div class="card-header bg-primary text-white">
 
-    <form method="POST" enctype="multipart/form-data">
+            <h3 class="mb-0">
+                🛠️ Nueva Solicitud de Herramienta
+            </h3>
 
-        {% csrf_token %}
+        </div>
 
-        {{ formulario.as_p }}
 
-        <button type="submit" class="btn btn-success">
+        <div class="card-body">
 
-            Guardar
+            <form
+                method="POST"
+                enctype="multipart/form-data"
+            >
 
-        </button>
+                {% csrf_token %}
 
-        <a href="{% url 'lista_solicitudes_herramientas' %}" class="btn btn-secondary">
 
-            Cancelar
+                {% if formulario.non_field_errors %}
 
-        </a>
+                    <div class="alert alert-danger">
 
-    </form>
+                        {{ formulario.non_field_errors }}
+
+                    </div>
+
+                {% endif %}
+
+
+                <div class="row">
+
+                    <div class="col-md-6 mb-3">
+
+                        <label
+                            for="{{ formulario.estudiante.id_for_label }}"
+                            class="form-label fw-bold"
+                        >
+                            Estudiante
+                        </label>
+
+                        {{ formulario.estudiante }}
+
+                        {% if formulario.estudiante.errors %}
+
+                            <div class="text-danger small">
+                                {{ formulario.estudiante.errors }}
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="col-md-6 mb-3">
+
+                        <label
+                            for="{{ formulario.carrera.id_for_label }}"
+                            class="form-label fw-bold"
+                        >
+                            Carrera
+                        </label>
+
+                        {{ formulario.carrera }}
+
+                        {% if formulario.carrera.errors %}
+
+                            <div class="text-danger small">
+                                {{ formulario.carrera.errors }}
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="col-md-6 mb-3">
+
+                        <label
+                            for="{{ formulario.profesor.id_for_label }}"
+                            class="form-label fw-bold"
+                        >
+                            Profesor
+                        </label>
+
+                        {{ formulario.profesor }}
+
+                        {% if formulario.profesor.errors %}
+
+                            <div class="text-danger small">
+                                {{ formulario.profesor.errors }}
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="col-md-6 mb-3">
+
+                        <label
+                            for="{{ formulario.herramienta.id_for_label }}"
+                            class="form-label fw-bold"
+                        >
+                            Herramienta
+                        </label>
+
+                        {{ formulario.herramienta }}
+
+                        {% if formulario.herramienta.errors %}
+
+                            <div class="text-danger small">
+                                {{ formulario.herramienta.errors }}
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="col-md-4 mb-3">
+
+                        <label
+                            for="{{ formulario.cantidad.id_for_label }}"
+                            class="form-label fw-bold"
+                        >
+                            Cantidad
+                        </label>
+
+                        {{ formulario.cantidad }}
+
+                        {% if formulario.cantidad.errors %}
+
+                            <div class="text-danger small">
+                                {{ formulario.cantidad.errors }}
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="col-md-4 mb-3">
+
+                        <label
+                            for="{{ formulario.fecha_inicio.id_for_label }}"
+                            class="form-label fw-bold"
+                        >
+                            Fecha de inicio
+                        </label>
+
+                        {{ formulario.fecha_inicio }}
+
+                        {% if formulario.fecha_inicio.errors %}
+
+                            <div class="text-danger small">
+                                {{ formulario.fecha_inicio.errors }}
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="col-md-4 mb-3">
+
+                        <label
+                            for="{{ formulario.fecha_fin.id_for_label }}"
+                            class="form-label fw-bold"
+                        >
+                            Fecha de finalización
+                        </label>
+
+                        {{ formulario.fecha_fin }}
+
+                        {% if formulario.fecha_fin.errors %}
+
+                            <div class="text-danger small">
+                                {{ formulario.fecha_fin.errors }}
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="col-12 mb-3">
+
+                        <label
+                            for="{{ formulario.motivo.id_for_label }}"
+                            class="form-label fw-bold"
+                        >
+                            Motivo de la solicitud
+                        </label>
+
+                        {{ formulario.motivo }}
+
+                        {% if formulario.motivo.errors %}
+
+                            <div class="text-danger small">
+                                {{ formulario.motivo.errors }}
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="col-12 mb-3">
+
+                        <label
+                            for="{{ formulario.documento.id_for_label }}"
+                            class="form-label fw-bold"
+                        >
+                            Documento de respaldo
+                        </label>
+
+                        {{ formulario.documento }}
+
+                        <div class="form-text">
+                            Puede adjuntar un documento de respaldo si es necesario.
+                        </div>
+
+                        {% if formulario.documento.errors %}
+
+                            <div class="text-danger small">
+                                {{ formulario.documento.errors }}
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+
+                <div class="d-flex gap-2 mt-3">
+
+                    <button
+                        type="submit"
+                        class="btn btn-success"
+                    >
+                        💾 Guardar Solicitud
+                    </button>
+
+
+                    <a
+                        href="{% url 'lista_solicitudes_herramientas' %}"
+                        class="btn btn-secondary"
+                    >
+                        Cancelar
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
 
 </div>
 

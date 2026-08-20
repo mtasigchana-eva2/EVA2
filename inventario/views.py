@@ -31,12 +31,42 @@ def lista_inventario(request):
             Q(sede__ciudad__icontains=buscar)
         )
 
+    # ==========================================================
+    # CONTADORES GENERALES DEL INVENTARIO
+    # ==========================================================
+
+    total_inventario = 0
+    total_disponibles = 0
+    total_prestadas = 0
+    total_mantenimiento = 0
+    total_danadas = 0
+
+    for equipo in inventario:
+
+        total_inventario += equipo.cantidad or 0
+
+        total_disponibles += equipo.cantidad_disponible or 0
+
+        total_prestadas += equipo.cantidad_prestada or 0
+
+        total_mantenimiento += equipo.cantidad_mantenimiento or 0
+
+        total_danadas += equipo.cantidad_danada or 0
+
+
     return render(
         request,
         "inventario/index.html",
         {
             "inventario": inventario,
-            "buscar": buscar
+            "buscar": buscar,
+
+            # Contadores
+            "total_inventario": total_inventario,
+            "total_disponibles": total_disponibles,
+            "total_prestadas": total_prestadas,
+            "total_mantenimiento": total_mantenimiento,
+            "total_danadas": total_danadas,
         }
     )
 

@@ -195,17 +195,13 @@
                         <td>
 
                             <span class="badge bg-primary">
-
                                 {{ equipo.sede.nombre }}
-
                             </span>
 
                             <br>
 
                             <small class="text-muted">
-
                                 {{ equipo.sede.ciudad }}
-
                             </small>
 
                         </td>
@@ -215,9 +211,7 @@
                         <td class="text-center">
 
                             <span class="badge bg-dark fs-6">
-
                                 {{ equipo.cantidad }}
-
                             </span>
 
                         </td>
@@ -229,17 +223,13 @@
                             {% if equipo.cantidad_disponible > 0 %}
 
                                 <span class="badge bg-success fs-6">
-
                                     {{ equipo.cantidad_disponible }}
-
                                 </span>
 
                             {% else %}
 
                                 <span class="badge bg-danger fs-6">
-
                                     0
-
                                 </span>
 
                             {% endif %}
@@ -251,9 +241,7 @@
                         <td class="text-center">
 
                             <span class="badge bg-warning text-dark fs-6">
-
                                 {{ equipo.cantidad_prestada }}
-
                             </span>
 
                         </td>
@@ -263,9 +251,7 @@
                         <td class="text-center">
 
                             <span class="badge bg-secondary fs-6">
-
                                 {{ equipo.cantidad_mantenimiento }}
-
                             </span>
 
                         </td>
@@ -275,9 +261,7 @@
                         <td class="text-center">
 
                             <span class="badge bg-danger fs-6">
-
                                 {{ equipo.cantidad_danada }}
-
                             </span>
 
                         </td>
@@ -289,41 +273,31 @@
                             {% if equipo.cantidad_disponible > 0 %}
 
                                 <span class="badge bg-success">
-
                                     Disponible
-
                                 </span>
 
                             {% elif equipo.cantidad_prestada > 0 %}
 
                                 <span class="badge bg-warning text-dark">
-
                                     Prestado
-
                                 </span>
 
                             {% elif equipo.cantidad_mantenimiento > 0 %}
 
                                 <span class="badge bg-secondary">
-
                                     Mantenimiento
-
                                 </span>
 
                             {% elif equipo.cantidad_danada > 0 %}
 
                                 <span class="badge bg-danger">
-
                                     Dañado
-
                                 </span>
 
                             {% else %}
 
                                 <span class="badge bg-dark">
-
                                     Sin disponibilidad
-
                                 </span>
 
                             {% endif %}
@@ -398,42 +372,29 @@
     </div>
 
 
-    <!-- RESUMEN GENERAL -->
+    <!-- ===================================================== -->
+    <!-- RESUMEN GENERAL DEL INVENTARIO -->
+    <!-- ===================================================== -->
+
     <div class="row mt-4">
 
+        <!-- TOTAL -->
         <div class="col-md-3 mb-3">
 
-            <div class="card shadow-sm border-dark">
+            <div class="card shadow-sm border-dark h-100">
 
                 <div class="card-body text-center">
 
                     <h6 class="text-muted">
-                        Registros de inventario
+                        Total de equipos
                     </h6>
 
-                    <h3 class="fw-bold">
-                        {{ inventario|length }}
-                    </h3>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="col-md-3 mb-3">
-
-            <div class="card shadow-sm border-success">
-
-                <div class="card-body text-center">
-
-                    <h6 class="text-muted">
-                        Disponibles
-                    </h6>
+                    <h2 class="fw-bold">
+                        {{ total_inventario }}
+                    </h2>
 
                     <p class="small text-muted mb-0">
-                        Control individual por sede
+                        Unidades registradas
                     </p>
 
                 </div>
@@ -443,15 +404,46 @@
         </div>
 
 
+        <!-- DISPONIBLES -->
         <div class="col-md-3 mb-3">
 
-            <div class="card shadow-sm border-warning">
+            <div class="card shadow-sm border-success h-100">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Disponibles
+                    </h6>
+
+                    <h2 class="fw-bold text-success">
+                        {{ total_disponibles }}
+                    </h2>
+
+                    <p class="small text-muted mb-0">
+                        Listas para préstamo
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- PRESTADOS -->
+        <div class="col-md-3 mb-3">
+
+            <div class="card shadow-sm border-warning h-100">
 
                 <div class="card-body text-center">
 
                     <h6 class="text-muted">
                         Prestados
                     </h6>
+
+                    <h2 class="fw-bold text-warning">
+                        {{ total_prestadas }}
+                    </h2>
 
                     <p class="small text-muted mb-0">
                         Unidades actualmente prestadas
@@ -464,18 +456,49 @@
         </div>
 
 
+        <!-- MANTENIMIENTO -->
         <div class="col-md-3 mb-3">
 
-            <div class="card shadow-sm border-primary">
+            <div class="card shadow-sm border-secondary h-100">
 
                 <div class="card-body text-center">
 
                     <h6 class="text-muted">
-                        Control por sede
+                        Mantenimiento
                     </h6>
 
+                    <h2 class="fw-bold text-secondary">
+                        {{ total_mantenimiento }}
+                    </h2>
+
                     <p class="small text-muted mb-0">
-                        Pifo, Quito, Guayaquil, Santa Elena, etc.
+                        En revisión o reparación
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- DAÑADOS -->
+        <div class="col-md-3 mb-3">
+
+            <div class="card shadow-sm border-danger h-100">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Dañados
+                    </h6>
+
+                    <h2 class="fw-bold text-danger">
+                        {{ total_danadas }}
+                    </h2>
+
+                    <p class="small text-muted mb-0">
+                        Equipos fuera de servicio
                     </p>
 
                 </div>

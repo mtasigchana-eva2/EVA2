@@ -5,95 +5,444 @@
 
 <div class="container mt-4">
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="fw-bold">Gestión de Herramientas</h2>
-        <a href="{% url 'nueva_herramienta' %}" class="btn btn-primary">
-            ➕ Nueva Herramienta
-        </a>
+    <!-- ENCABEZADO -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+
+        <h2 class="fw-bold m-0">
+            Gestión de Herramientas
+        </h2>
+
+        {% if request.user.perfil %}
+            <span class="badge bg-secondary p-2">
+                Rol:
+                <strong>
+                    {{ request.user.perfil.get_rol_display }}
+                </strong>
+            </span>
+        {% endif %}
+
     </div>
 
-    <!-- Formulario de búsqueda -->
-    <form method="GET" class="row mb-3">
+
+    <!-- MENSAJES -->
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div
+                class="alert alert-success alert-dismissible fade show shadow-sm mt-3"
+                role="alert"
+            >
+
+                {{ message }}
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close"
+                ></button>
+
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+
+    <hr>
+
+
+    <!-- BOTÓN NUEVA HERRAMIENTA -->
+    {% if request.user.is_superuser or request.user.perfil.rol != 'Estudiante' %}
+
+        <a
+            href="{% url 'nueva_herramienta' %}"
+            class="btn btn-primary mb-3 shadow-sm"
+        >
+            ➕ Nueva Herramienta
+        </a>
+
+    {% endif %}
+
+
+    <!-- BUSCADOR -->
+    <form method="GET" class="row mb-3 g-2">
+
         <div class="col-md-5">
+
             <input
                 type="text"
                 name="buscar"
-                class="form-control"
                 value="{{ buscar|default:'' }}"
-                placeholder="Buscar herramienta...">
+                class="form-control"
+                placeholder="Buscar por código, número de serie, marca o modelo"
+            >
+
         </div>
+
+
         <div class="col-md-2">
-            <button class="btn btn-primary w-100">
+
+            <button
+                type="submit"
+                class="btn btn-primary w-100"
+            >
                 🔍 Buscar
             </button>
+
         </div>
+
+
         <div class="col-md-2">
-            <a href="{% url 'lista_herramientas' %}" class="btn btn-secondary w-100">
+
+            <a
+                href="{% url 'lista_herramientas' %}"
+                class="btn btn-secondary w-100"
+            >
                 Limpiar
             </a>
+
         </div>
+
     </form>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-success">
-                {{ message }}
+
+    <!-- TABLA -->
+    <div class="table-responsive">
+
+        <table class="table table-striped table-hover shadow-sm align-middle">
+
+            <thead class="table-dark">
+
+                <tr>
+
+                    <th>Código</th>
+
+                    <th>Número de Serie</th>
+
+                    <th>Marca</th>
+
+                    <th>Modelo</th>
+
+                    <th class="text-center">
+                        Estado
+                    </th>
+
+                    <th class="text-center">
+                        Acciones
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for herramienta in herramientas %}
+
+                    <tr>
+
+                        <!-- CÓDIGO -->
+                        <td>
+
+                            {% if herramienta.codigo %}
+
+                                <strong>
+                                    {{ herramienta.codigo }}
+                                </strong>
+
+                            {% else %}
+
+                                <span class="text-muted">
+                                    Sin código
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <!-- NÚMERO DE SERIE -->
+                        <td>
+                            {{ herramienta.numero_serie }}
+                        </td>
+
+
+                        <!-- MARCA -->
+                        <td>
+                            {{ herramienta.marca }}
+                        </td>
+
+
+                        <!-- MODELO -->
+                        <td>
+
+                            {% if herramienta.modelo %}
+
+                                {{ herramienta.modelo }}
+
+                            {% else %}
+
+                                <span class="text-muted">
+                                    Sin modelo
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <!-- ESTADO -->
+                        <td class="text-center">
+
+                            {% if herramienta.estado == "Disponible" %}
+
+                                <span class="badge bg-success fs-6">
+                                    Disponible
+                                </span>
+
+                            {% elif herramienta.estado == "Prestada" %}
+
+                                <span class="badge bg-warning text-dark fs-6">
+                                    Prestada
+                                </span>
+
+                            {% elif herramienta.estado == "Mantenimiento" %}
+
+                                <span class="badge bg-secondary fs-6">
+                                    Mantenimiento
+                                </span>
+
+                            {% elif herramienta.estado == "Dañada" %}
+
+                                <span class="badge bg-danger fs-6">
+                                    Dañada
+                                </span>
+
+                            {% else %}
+
+                                <span class="badge bg-dark fs-6">
+                                    {{ herramienta.estado }}
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <!-- ACCIONES -->
+                        <td class="text-center">
+
+                            {% if request.user.is_superuser or request.user.perfil.rol == 'Superadministrador' or request.user.perfil.rol == 'Administrador Talleres' %}
+
+                                <a
+                                    href="{% url 'editar_herramienta' herramienta.id %}"
+                                    class="btn btn-warning btn-sm me-1"
+                                >
+                                    ✏️ Editar
+                                </a>
+
+
+                                <a
+                                    href="{% url 'eliminar_herramienta' herramienta.id %}"
+                                    class="btn btn-danger btn-sm"
+                                    onclick="return confirm('¿Está seguro de que desea eliminar esta herramienta?');"
+                                >
+                                    🗑️ Eliminar
+                                </a>
+
+                            {% else %}
+
+                                <span class="text-muted small">
+                                    Sin acciones
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+
+                {% empty %}
+
+                    <tr>
+
+                        <td
+                            colspan="6"
+                            class="text-center text-muted py-4"
+                        >
+
+                            {% if buscar %}
+
+                                No se encontraron resultados para
+                                "<strong>{{ buscar }}</strong>".
+
+                            {% else %}
+
+                                No existen herramientas registradas.
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <!-- RESUMEN GENERAL DE HERRAMIENTAS -->
+
+    <div class="row mt-4">
+
+        <!-- TOTAL -->
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card shadow-sm border-dark">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Total de herramientas
+                    </h6>
+
+                    <h3 class="fw-bold">
+                        {{ total_herramientas }}
+                    </h3>
+
+                    <p class="small text-muted mb-0">
+                        Herramientas registradas
+                    </p>
+
+                </div>
+
             </div>
-        {% endfor %}
-    {% endif %}
 
-    <table class="table table-striped table-hover">
-        <thead class="table-dark">
-            <tr>
-                <th>Código</th>
-                <th>Número Serie</th>
-                <th>Marca</th>
-                <th>Modelo</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for h in herramientas %}
-            <tr>
-                <td>{{ h.codigo }}</td>
-                <td>{{ h.numero_serie }}</td>
-                <td>{{ h.marca }}</td>
-                <td>{{ h.modelo }}</td>
-                <td>{{ h.estado }}</td>
-                <td>
-                    {% if request.user|can_edit_inventory %}
-                        <a href="{% url 'editar_herramienta' h.id %}" class="btn btn-warning btn-sm">
-                            Editar
-                        </a>
-                    {% endif %}
+        </div>
 
-                    {% if request.user|can_delete_inventory %}
-                        <a href="{% url 'eliminar_herramienta' h.id %}"
-                           class="btn btn-danger btn-sm"
-                           onclick="return confirm('¿Eliminar herramienta?')">
-                            Eliminar
-                        </a>
-                    {% endif %}
 
-                    {% if not request.user|can_edit_inventory and not request.user|can_delete_inventory %}
-                        <span class="text-muted small">Sin acciones</span>
-                    {% endif %}
-                </td>
-            </tr>
-        {% empty %}
-            <tr>
-                <td colspan="6" class="text-center">
-                    {% if buscar %}
-                        No se encontraron herramientas.
-                    {% else %}
-                        No existen herramientas registradas.
-                    {% endif %}
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+        <!-- DISPONIBLES -->
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card shadow-sm border-success">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Disponibles
+                    </h6>
+
+                    <h3 class="fw-bold text-success">
+                        {{ disponibles }}
+                    </h3>
+
+                    <p class="small text-muted mb-0">
+                        Listas para préstamo
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- PRESTADAS -->
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card shadow-sm border-warning">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Prestadas
+                    </h6>
+
+                    <h3 class="fw-bold text-warning">
+                        {{ prestadas }}
+                    </h3>
+
+                    <p class="small text-muted mb-0">
+                        Actualmente prestadas
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- MANTENIMIENTO -->
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card shadow-sm border-secondary">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Mantenimiento
+                    </h6>
+
+                    <h3 class="fw-bold text-secondary">
+                        {{ mantenimiento }}
+                    </h3>
+
+                    <p class="small text-muted mb-0">
+                        En revisión o reparación
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+    <!-- HERRAMIENTAS DAÑADAS -->
+
+    <div class="row">
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card shadow-sm border-danger">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Dañadas
+                    </h6>
+
+                    <h3 class="fw-bold text-danger">
+                        {{ danadas }}
+                    </h3>
+
+                    <p class="small text-muted mb-0">
+                        Herramientas fuera de servicio
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
 
 </div>
 
