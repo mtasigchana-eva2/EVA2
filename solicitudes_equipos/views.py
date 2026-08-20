@@ -1,168 +1,28 @@
 import unicodedata
-from django.shortcuts import render, redirect, get_object_or_404
+
+from django.shortcuts import (
+    render,
+    redirect,
+    get_object_or_404
+)
+
 from django.contrib import messages
-from django.http import HttpResponse, HttpResponseForbidden
+
+from django.http import (
+    HttpResponse,
+    HttpResponseForbidden
+)
+
 from django.contrib.auth.models import User
+
+from django.db import transaction
+
 from django.db.models import Q
 
-# ReportLab para la generación del PDF estructurado en tabla
+# ReportLab
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
-from notificaciones.utils import enviar_notificacion_y_correo
-from usuarios.permisos import puede_editar_solicitudes, puede_eliminar_solicitudes
-from .models import SolicitudEquipo
-from .forms import SolicitudEquipoForm
-
-
-def normalizar_texto(val):
-    """
-    Convierte cualquier objeto o texto a una cadena limpia sin tildes ni caracteres
-    especiales para evitar errores de codificación en el PDF.
-    """
-    if val is None:
-        return "-"
-    
-    if hasattr(val, 'get_full_name') and callable(val.get_full_name):
-        val = val.get_full_name() or getattr(val, 'username', str(val))
-    
-    texto = str(val)
-    texto_sin_tildes = ''.join(
-        c for c in unicodedata.normalize('NFD', texto)
-        if unicodedata.category(c) != 'Mn'
-    )
-    
-    reemplazos = {'º': '.', '°': '.', 'ª': '.'}
-    for orig, reemp in reemplazos.items():
-        texto_sin_tildes = texto_sin_tildes.replace(orig, reemp)
-        
-    return texto_sin_tildes
-
-
-def lista_solicitudes_equipos(request):
-    solicitudes = SolicitudEquipo.objects.all().order_by("-fecha_registro")
-    return render(
-        request,
-        "solicitudes_equipos/index.html",
-        {"solicitudes": solicitudes}
-    )
-
-
-def nueva_solicitud_equipo(request):
-    if request.method == "POST":
-        formulario = SolicitudEquipoForm(request.POST, request.FILES)
-
-        if formulario.is_valid():
-            solicitud = formulario.save(commit=False)
-
-            # Estado Pendiente forzado por defecto
-            if (
-                not request.user.is_superuser
-                and (
-                    not hasattr(request.user, "perfil")
-                    or request.user.perfil.rol == "Estudiante"
-                )
-            ):
-                solicitud.estado = "Pendiente"
-            elif not solicitud.estado:
-                solicitud.estado = "Pendiente"
-
-            # Primero guardamos la solicitud
-            solicitud.save()
-
-            # Las notificaciones NO deben impedir que la solicitud
-            # se registre correctamente.
-            try:
-                destinatarios = list(
-                    User.objects.filter(
-                        Q(perfil__rol__iexact="Docente")
-                        | Q(perfil__rol__iexact="Administrador Talleres")
-                        | Q(perfil__rol__iexact="Coordinador Talleres")
-                        | Q(perfil__rol__iexact="Coordinador Carrera")
-                        | Q(perfil__rol__iexact="Superadministrador")
-                        | Q(is_superuser=True)
-                    ).distinct()
-                )
-
-                for destinatario in destinatarios:
-                    try:
-                        enviar_notificacion_y_correo(
-                            usuario=destinatario,
-                            titulo="Nueva Solicitud de Equipo 💻",
-                            mensaje=(
-                                f"El estudiante {solicitud.estudiante} "
-                                f"solicitó el equipo {solicitud.equipo}."
-                            ),
-                            url_destino="/solicitudes-equipos/",
-                        )
-                    except Exception as error_notificacion:
-                        print(
-                            "ERROR AL ENVIAR NOTIFICACIÓN DE SOLICITUD "
-                            f"DE EQUIPO: {error_notificacion}"
-                        )
-
-            except Exception as error_general:
-                print(
-                    "ERROR GENERAL EN NOTIFICACIONES DE SOLICITUD "
-                    f"DE EQUIPO: {error_general}"
-                )
-
-            # La solicitud ya está guardada aunque falle una notificación
-            messages.success(
-                request,
-                "Solicitud registrada correctamente."
-            )
-
-            return redirect("lista_solicitudes_equipos")
-
-    else:
-        formulario = SolicitudEquipoForm()
-
-    return render(
-        request,
-        "solicitudes_equipos/nuevo.html",
-        {"formulario": formulario}
-    )
-
-
-def editar_solicitud_equipo(request, id):
-    if not puede_editar_solicitudes(request.user):
-        return HttpResponseForbidden("Acceso denegado: Tu rol no tiene permisos para editar solicitudes de equipos.")
-
-    solicitud = get_object_or_404(SolicitudEquipo, id=id)
-
-    if request.method == "POST":
-        formulario = SolicitudEquipoForm(request.POST, request.FILES, instance=solicitud)
-
-        if formulario.is_valid():
-            estado_anterior = solicitud.estado
-            solicitud_actualizada = formulario.save()
-
-            if estado_anterior != solicitud_actualizada.estado:
-                estudiante_user = User.objects.filter(
-                    Q(username__iexact=str(solicitud_actualizada.estudiante)) |
-                    Q(perfil__rol__iexact='Estudiante', first_name__icontains=str(solicitud_actualizada.estudiante))
-                ).first()
-                if estudiante_user:
-                    enviar_notificacion_y_correo(
-                        usuario=estudiante_user,
-                        titulo=f"Solicitud de Equipo: {solicitud_actualizada.estado} 💻",
-                        mensaje=f"Tu solicitud para el equipo {solicitud_actualizada.equipo} ha sido {solicitud_actualizada.estado}.",
-                        url_destino="/solicitudes-equipos/"
-                    )
-import unicodedata
-
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.http import HttpResponse, HttpResponseForbidden
-from django.contrib.auth.models import User
-from django.db.models import Q
-
-# ReportLab para la generación del PDF estructurado en tabla
-from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
 from reportlab.platypus import (
     SimpleDocTemplate,
     Paragraph,
@@ -170,32 +30,65 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
-from notificaciones.utils import enviar_notificacion_y_correo
+from reportlab.lib.styles import (
+    getSampleStyleSheet,
+    ParagraphStyle
+)
+
+from notificaciones.utils import (
+    enviar_notificacion_y_correo
+)
+
 from usuarios.permisos import (
     puede_editar_solicitudes,
 )
+
 from .models import SolicitudEquipo
+
 from .forms import SolicitudEquipoForm
 
+from inventario.models import Inventario
+
+
+# ============================================================
+# FUNCIONES AUXILIARES
+# ============================================================
 
 def normalizar_texto(val):
     """
-    Convierte cualquier objeto o texto a una cadena limpia sin tildes
-    ni caracteres especiales para evitar errores de codificación en el PDF.
+    Convierte cualquier objeto o texto a una cadena limpia
+    sin tildes ni caracteres especiales para evitar errores
+    de codificación en el PDF.
     """
+
     if val is None:
         return "-"
 
-    if hasattr(val, "get_full_name") and callable(val.get_full_name):
-        val = val.get_full_name() or getattr(val, "username", str(val))
+    if hasattr(
+        val,
+        "get_full_name"
+    ) and callable(
+        val.get_full_name
+    ):
+
+        val = (
+            val.get_full_name()
+            or getattr(
+                val,
+                "username",
+                str(val)
+            )
+        )
 
     texto = str(val)
 
     texto_sin_tildes = "".join(
         c
-        for c in unicodedata.normalize("NFD", texto)
+        for c in unicodedata.normalize(
+            "NFD",
+            texto
+        )
         if unicodedata.category(c) != "Mn"
     )
 
@@ -206,9 +99,12 @@ def normalizar_texto(val):
     }
 
     for orig, reemp in reemplazos.items():
-        texto_sin_tildes = texto_sin_tildes.replace(
-            orig,
-            reemp,
+
+        texto_sin_tildes = (
+            texto_sin_tildes.replace(
+                orig,
+                reemp
+            )
         )
 
     return texto_sin_tildes
@@ -217,12 +113,18 @@ def normalizar_texto(val):
 def usuario_es_estudiante(user):
     """
     Solamente el rol Estudiante recibe la restricción.
+
     Los demás roles conservan su comportamiento actual.
     """
+
     if user.is_superuser:
         return False
 
-    perfil = getattr(user, "perfil", None)
+    perfil = getattr(
+        user,
+        "perfil",
+        None
+    )
 
     if not perfil:
         return False
@@ -230,27 +132,30 @@ def usuario_es_estudiante(user):
     return perfil.rol == "Estudiante"
 
 
-def estudiante_puede_ver_solicitud(user, solicitud):
+def estudiante_puede_ver_solicitud(
+    user,
+    solicitud
+):
     """
-    En SolicitudEquipo el campo estudiante es texto.
+    Un estudiante solamente puede ver sus propias
+    solicitudes.
 
-    Se permiten las dos formas que utiliza actualmente el sistema:
-    - username
-    - nombre completo
-
-    No utilizamos first_name solamente porque podría provocar
-    que dos estudiantes con el mismo nombre compartan solicitudes.
+    Los demás roles pueden ver todas.
     """
+
     if not usuario_es_estudiante(user):
         return True
 
     valores_permitidos = {
-        user.username.strip().casefold(),
+        user.username.strip().casefold()
     }
 
-    nombre_completo = user.get_full_name().strip()
+    nombre_completo = (
+        user.get_full_name().strip()
+    )
 
     if nombre_completo:
+
         valores_permitidos.add(
             nombre_completo.casefold()
         )
@@ -259,51 +164,208 @@ def estudiante_puede_ver_solicitud(user, solicitud):
         solicitud.estudiante
     ).strip().casefold()
 
-    return estudiante_guardado in valores_permitidos
+    return (
+        estudiante_guardado
+        in valores_permitidos
+    )
 
 
-def obtener_solicitud_permitida(request, id):
+def obtener_solicitud_permitida(
+    request,
+    id
+):
+
     solicitud = get_object_or_404(
         SolicitudEquipo,
-        id=id,
+        id=id
     )
 
     if not estudiante_puede_ver_solicitud(
         request.user,
-        solicitud,
+        solicitud
     ):
+
         return None
 
     return solicitud
 
 
-def lista_solicitudes_equipos(request):
+# ============================================================
+# INVENTARIO
+# ============================================================
 
-    if usuario_es_estudiante(request.user):
+@transaction.atomic
+def descontar_inventario(
+    solicitud
+):
+    """
+    Descuenta las unidades del inventario cuando una
+    solicitud es aprobada.
+
+    Ejemplo:
+
+    Total = 10
+    Prestado = 0
+    Solicitud = 1
+
+    Resultado:
+
+    Total = 10
+    Prestado = 1
+    Disponible = 9
+    """
+
+    if solicitud.inventario_descontado:
+        return True
+
+    equipo = (
+        Inventario.objects
+        .select_for_update()
+        .get(
+            id=solicitud.equipo_id
+        )
+    )
+
+    disponible = (
+        equipo.cantidad_disponible
+    )
+
+    if solicitud.cantidad > disponible:
+
+        return False
+
+    equipo.cantidad_prestada += (
+        solicitud.cantidad
+    )
+
+    equipo.actualizar_estado()
+
+    equipo.save(
+        update_fields=[
+            "cantidad_prestada",
+            "estado",
+        ]
+    )
+
+    solicitud.inventario_descontado = True
+
+    solicitud.save(
+        update_fields=[
+            "inventario_descontado"
+        ]
+    )
+
+    return True
+
+
+@transaction.atomic
+def devolver_inventario(
+    solicitud
+):
+    """
+    Devuelve al inventario las unidades que habían sido
+    prestadas por esta solicitud.
+
+    Ejemplo:
+
+    Total = 10
+    Prestado = 1
+    Disponible = 9
+
+    Al devolver:
+
+    Total = 10
+    Prestado = 0
+    Disponible = 10
+    """
+
+    if not solicitud.inventario_descontado:
+        return True
+
+    equipo = (
+        Inventario.objects
+        .select_for_update()
+        .get(
+            id=solicitud.equipo_id
+        )
+    )
+
+    equipo.cantidad_prestada = max(
+        equipo.cantidad_prestada
+        - solicitud.cantidad,
+        0
+    )
+
+    equipo.actualizar_estado()
+
+    equipo.save(
+        update_fields=[
+            "cantidad_prestada",
+            "estado",
+        ]
+    )
+
+    solicitud.inventario_descontado = False
+
+    solicitud.save(
+        update_fields=[
+            "inventario_descontado"
+        ]
+    )
+
+    return True
+
+
+# ============================================================
+# LISTA
+# ============================================================
+
+def lista_solicitudes_equipos(
+    request
+):
+
+    if usuario_es_estudiante(
+        request.user
+    ):
 
         valores_permitidos = Q(
-            estudiante__iexact=request.user.username
+            estudiante__iexact=(
+                request.user.username
+            )
         )
 
-        nombre_completo = request.user.get_full_name().strip()
+        nombre_completo = (
+            request.user.get_full_name().strip()
+        )
 
         if nombre_completo:
+
             valores_permitidos |= Q(
-                estudiante__iexact=nombre_completo
+                estudiante__iexact=(
+                    nombre_completo
+                )
             )
 
         solicitudes = (
             SolicitudEquipo.objects
-            .filter(valores_permitidos)
-            .order_by("-fecha_registro")
+            .select_related("equipo")
+            .filter(
+                valores_permitidos
+            )
+            .order_by(
+                "-fecha_registro"
+            )
         )
 
     else:
 
         solicitudes = (
             SolicitudEquipo.objects
+            .select_related("equipo")
             .all()
-            .order_by("-fecha_registro")
+            .order_by(
+                "-fecha_registro"
+            )
         )
 
     return render(
@@ -311,17 +373,23 @@ def lista_solicitudes_equipos(request):
         "solicitudes_equipos/index.html",
         {
             "solicitudes": solicitudes
-        },
+        }
     )
 
 
-def nueva_solicitud_equipo(request):
+# ============================================================
+# NUEVA SOLICITUD
+# ============================================================
+
+def nueva_solicitud_equipo(
+    request
+):
 
     if request.method == "POST":
 
         formulario = SolicitudEquipoForm(
             request.POST,
-            request.FILES,
+            request.FILES
         )
 
         if formulario.is_valid():
@@ -330,23 +398,17 @@ def nueva_solicitud_equipo(request):
                 commit=False
             )
 
-            if (
-                not request.user.is_superuser
-                and (
-                    not hasattr(
-                        request.user,
-                        "perfil",
-                    )
-                    or request.user.perfil.rol
-                    == "Estudiante"
-                )
-            ):
-                solicitud.estado = "Pendiente"
+            # El estado inicial es Pendiente.
+            solicitud.estado = "Pendiente"
 
-            elif not solicitud.estado:
-                solicitud.estado = "Pendiente"
+            # Todavía NO descontamos inventario.
+            solicitud.inventario_descontado = False
 
             solicitud.save()
+
+            # ------------------------------------------------
+            # NOTIFICACIONES
+            # ------------------------------------------------
 
             try:
 
@@ -357,23 +419,27 @@ def nueva_solicitud_equipo(request):
                         )
                         |
                         Q(
-                            perfil__rol__iexact=
-                            "Administrador Talleres"
+                            perfil__rol__iexact=(
+                                "Administrador Talleres"
+                            )
                         )
                         |
                         Q(
-                            perfil__rol__iexact=
-                            "Coordinador Talleres"
+                            perfil__rol__iexact=(
+                                "Coordinador Talleres"
+                            )
                         )
                         |
                         Q(
-                            perfil__rol__iexact=
-                            "Coordinador Carrera"
+                            perfil__rol__iexact=(
+                                "Coordinador Carrera"
+                            )
                         )
                         |
                         Q(
-                            perfil__rol__iexact=
-                            "Superadministrador"
+                            perfil__rol__iexact=(
+                                "Superadministrador"
+                            )
                         )
                         |
                         Q(
@@ -388,35 +454,43 @@ def nueva_solicitud_equipo(request):
 
                         enviar_notificacion_y_correo(
                             usuario=destinatario,
-                            titulo="Nueva Solicitud de Equipo 💻",
+                            titulo=(
+                                "Nueva Solicitud de Equipo 💻"
+                            ),
                             mensaje=(
                                 f"El estudiante "
                                 f"{solicitud.estudiante} "
-                                f"solicitó el equipo "
+                                f"solicitó "
+                                f"{solicitud.cantidad} "
+                                f"unidad(es) del equipo "
                                 f"{solicitud.equipo}."
                             ),
-                            url_destino="/solicitudes-equipos/",
+                            url_destino=(
+                                "/solicitudes-equipos/"
+                            ),
                         )
 
                     except Exception as error_notificacion:
 
                         print(
-                            "ERROR AL ENVIAR NOTIFICACIÓN "
-                            "DE SOLICITUD DE EQUIPO: "
+                            "ERROR AL ENVIAR "
+                            "NOTIFICACIÓN DE "
+                            "SOLICITUD DE EQUIPO: "
                             f"{error_notificacion}"
                         )
 
             except Exception as error_general:
 
                 print(
-                    "ERROR GENERAL EN NOTIFICACIONES "
-                    "DE SOLICITUD DE EQUIPO: "
+                    "ERROR GENERAL EN "
+                    "NOTIFICACIONES DE "
+                    "SOLICITUD DE EQUIPO: "
                     f"{error_general}"
                 )
 
             messages.success(
                 request,
-                "Solicitud registrada correctamente.",
+                "Solicitud registrada correctamente."
             )
 
             return redirect(
@@ -432,22 +506,45 @@ def nueva_solicitud_equipo(request):
         "solicitudes_equipos/nuevo.html",
         {
             "formulario": formulario
-        },
+        }
     )
 
 
-def editar_solicitud_equipo(request, id):
+# ============================================================
+# EDITAR SOLICITUD
+# ============================================================
+
+@transaction.atomic
+def editar_solicitud_equipo(
+    request,
+    id
+):
 
     if not puede_editar_solicitudes(
         request.user
     ):
+
         return HttpResponseForbidden(
-            "Acceso denegado: Tu rol no tiene permisos para editar solicitudes de equipos."
+            "Acceso denegado: Tu rol no tiene "
+            "permisos para editar solicitudes "
+            "de equipos."
         )
 
     solicitud = get_object_or_404(
         SolicitudEquipo,
-        id=id,
+        id=id
+    )
+
+    estado_anterior = (
+        solicitud.estado
+    )
+
+    cantidad_anterior = (
+        solicitud.cantidad
+    )
+
+    equipo_anterior_id = (
+        solicitud.equipo_id
     )
 
     if request.method == "POST":
@@ -455,14 +552,139 @@ def editar_solicitud_equipo(request, id):
         formulario = SolicitudEquipoForm(
             request.POST,
             request.FILES,
-            instance=solicitud,
+            instance=solicitud
         )
 
         if formulario.is_valid():
 
-            estado_anterior = solicitud.estado
+            solicitud_actualizada = (
+                formulario.save(
+                    commit=False
+                )
+            )
 
-            solicitud_actualizada = formulario.save()
+            estado_nuevo = (
+                solicitud_actualizada.estado
+            )
+
+            # ------------------------------------------------
+            # CASO 1:
+            # LA SOLICITUD YA ESTABA APROBADA
+            # ------------------------------------------------
+
+            if estado_anterior == "Aprobada":
+
+                # Si cambia el equipo o la cantidad,
+                # primero devolvemos el inventario anterior.
+                if (
+                    cantidad_anterior
+                    != solicitud_actualizada.cantidad
+                    or
+                    equipo_anterior_id
+                    != solicitud_actualizada.equipo_id
+                ):
+
+                    devolver_inventario(
+                        solicitud
+                    )
+
+                    solicitud_actualizada.inventario_descontado = False
+
+                # Si sigue aprobada, volvemos a descontar
+                # la nueva cantidad.
+                if estado_nuevo == "Aprobada":
+
+                    solicitud_actualizada.save()
+
+                    resultado = (
+                        descontar_inventario(
+                            solicitud_actualizada
+                        )
+                    )
+
+                    if not resultado:
+
+                        messages.error(
+                            request,
+                            "No hay suficiente stock "
+                            "disponible para actualizar "
+                            "esta solicitud."
+                        )
+
+                        return render(
+                            request,
+                            "solicitudes_equipos/nuevo.html",
+                            {
+                                "formulario": formulario,
+                                "solicitud": solicitud,
+                            }
+                        )
+
+                elif estado_nuevo == "Devuelta":
+
+                    solicitud_actualizada.save()
+
+                    # Ya fue devuelto arriba.
+                    solicitud_actualizada.inventario_descontado = False
+
+                    solicitud_actualizada.save(
+                        update_fields=[
+                            "inventario_descontado"
+                        ]
+                    )
+
+                else:
+
+                    solicitud_actualizada.save()
+
+            # ------------------------------------------------
+            # CASO 2:
+            # NO ESTABA APROBADA
+            # ------------------------------------------------
+
+            else:
+
+                solicitud_actualizada.save()
+
+                if estado_nuevo == "Aprobada":
+
+                    resultado = (
+                        descontar_inventario(
+                            solicitud_actualizada
+                        )
+                    )
+
+                    if not resultado:
+
+                        solicitud_actualizada.estado = (
+                            estado_anterior
+                        )
+
+                        solicitud_actualizada.save(
+                            update_fields=[
+                                "estado"
+                            ]
+                        )
+
+                        messages.error(
+                            request,
+                            "No hay suficiente stock "
+                            "disponible para aprobar "
+                            "esta solicitud."
+                        )
+
+                        return render(
+                            request,
+                            "solicitudes_equipos/nuevo.html",
+                            {
+                                "formulario": formulario,
+                                "solicitud": solicitud,
+                            }
+                        )
+
+            # ------------------------------------------------
+            # NOTIFICAR CAMBIO DE ESTADO
+            # ------------------------------------------------
 
             if (
                 estado_anterior
@@ -480,7 +702,7 @@ def editar_solicitud_equipo(request, id):
                         perfil__rol__iexact="Estudiante",
                         first_name__icontains=str(
                             solicitud_actualizada.estudiante
-                        ),
+                        )
                     )
                 ).first()
 
@@ -498,12 +720,14 @@ def editar_solicitud_equipo(request, id):
                             f"ha sido "
                             f"{solicitud_actualizada.estado}."
                         ),
-                        url_destino="/solicitudes-equipos/",
+                        url_destino=(
+                            "/solicitudes-equipos/"
+                        )
                     )
 
             messages.success(
                 request,
-                "Solicitud actualizada correctamente.",
+                "Solicitud actualizada correctamente."
             )
 
             return redirect(
@@ -522,29 +746,48 @@ def editar_solicitud_equipo(request, id):
         {
             "formulario": formulario,
             "solicitud": solicitud,
-        },
+        }
     )
 
 
-def eliminar_solicitud_equipo(request, id):
+# ============================================================
+# ELIMINAR SOLICITUD
+# ============================================================
+
+@transaction.atomic
+def eliminar_solicitud_equipo(
+    request,
+    id
+):
 
     if not puede_editar_solicitudes(
         request.user
     ):
+
         return HttpResponseForbidden(
-            "Acceso denegado: Tu rol no tiene permisos para eliminar solicitudes de equipos."
+            "Acceso denegado: Tu rol no tiene "
+            "permisos para eliminar solicitudes "
+            "de equipos."
         )
 
     solicitud = get_object_or_404(
         SolicitudEquipo,
-        id=id,
+        id=id
     )
+
+    # Si estaba prestado, primero devolvemos
+    # las unidades al inventario.
+    if solicitud.inventario_descontado:
+
+        devolver_inventario(
+            solicitud
+        )
 
     solicitud.delete()
 
     messages.success(
         request,
-        "Solicitud eliminada correctamente.",
+        "Solicitud eliminada correctamente."
     )
 
     return redirect(
@@ -552,16 +795,26 @@ def eliminar_solicitud_equipo(request, id):
     )
 
 
-def exportar_pdf_solicitud_equipo(request, id):
+# ============================================================
+# PDF
+# ============================================================
+
+def exportar_pdf_solicitud_equipo(
+    request,
+    id
+):
 
     solicitud = obtener_solicitud_permitida(
         request,
-        id,
+        id
     )
 
     if solicitud is None:
+
         return HttpResponseForbidden(
-            "Acceso denegado: Un estudiante solamente puede descargar sus propias solicitudes."
+            "Acceso denegado: Un estudiante "
+            "solamente puede descargar sus "
+            "propias solicitudes."
         )
 
     response = HttpResponse(
@@ -571,7 +824,7 @@ def exportar_pdf_solicitud_equipo(request, id):
     response[
         "Content-Disposition"
     ] = (
-        f'attachment; '
+        "attachment; "
         f'filename="Solicitud_Equipo_{solicitud.id}.pdf"'
     )
 
@@ -592,7 +845,9 @@ def exportar_pdf_solicitud_equipo(request, id):
         fontName="Helvetica-Bold",
         fontSize=12,
         alignment=1,
-        textColor=colors.HexColor("#003366"),
+        textColor=colors.HexColor(
+            "#003366"
+        ),
     )
 
     estilo_subtitulo_inst = ParagraphStyle(
@@ -601,7 +856,9 @@ def exportar_pdf_solicitud_equipo(request, id):
         fontName="Helvetica-Bold",
         fontSize=10,
         alignment=1,
-        textColor=colors.HexColor("#333333"),
+        textColor=colors.HexColor(
+            "#333333"
+        ),
     )
 
     estilo_titulo_doc = ParagraphStyle(
@@ -610,7 +867,9 @@ def exportar_pdf_solicitud_equipo(request, id):
         fontName="Helvetica-Bold",
         fontSize=13,
         alignment=1,
-        textColor=colors.HexColor("#003366"),
+        textColor=colors.HexColor(
+            "#003366"
+        ),
         spaceAfter=15,
     )
 
@@ -647,7 +906,10 @@ def exportar_pdf_solicitud_equipo(request, id):
     )
 
     elementos.append(
-        Spacer(1, 10)
+        Spacer(
+            1,
+            10
+        )
     )
 
     elementos.append(
@@ -664,98 +926,102 @@ def exportar_pdf_solicitud_equipo(request, id):
         if getattr(
             solicitud,
             "fecha_registro",
-            None,
+            None
         )
         else "-"
     )
 
     tabla_data = [
+
         [
             Paragraph(
                 "<b>N. Solicitud</b>",
-                estilo_celda_bold,
+                estilo_celda_bold
             ),
             Paragraph(
                 normalizar_texto(
                     solicitud.id
                 ),
-                estilo_celda,
+                estilo_celda
             ),
             Paragraph(
                 "<b>Estado</b>",
-                estilo_celda_bold,
+                estilo_celda_bold
             ),
             Paragraph(
                 normalizar_texto(
                     solicitud.estado
                 ),
-                estilo_celda,
+                estilo_celda
             ),
         ],
+
         [
             Paragraph(
                 "<b>Estudiante</b>",
-                estilo_celda_bold,
+                estilo_celda_bold
             ),
             Paragraph(
                 normalizar_texto(
                     solicitud.estudiante
                 ),
-                estilo_celda,
+                estilo_celda
             ),
             Paragraph(
                 "<b>Carrera</b>",
-                estilo_celda_bold,
+                estilo_celda_bold
             ),
             Paragraph(
                 normalizar_texto(
                     getattr(
                         solicitud,
                         "carrera",
-                        "N/A",
+                        "N/A"
                     )
                 ),
-                estilo_celda,
+                estilo_celda
             ),
         ],
+
         [
             Paragraph(
                 "<b>Equipo</b>",
-                estilo_celda_bold,
+                estilo_celda_bold
             ),
             Paragraph(
                 normalizar_texto(
                     solicitud.equipo
                 ),
-                estilo_celda,
+                estilo_celda
             ),
             Paragraph(
                 "<b>Cantidad</b>",
-                estilo_celda_bold,
+                estilo_celda_bold
             ),
             Paragraph(
                 normalizar_texto(
                     solicitud.cantidad
                 ),
-                estilo_celda,
+                estilo_celda
             ),
         ],
+
         [
             Paragraph(
                 "<b>Fecha Registro</b>",
-                estilo_celda_bold,
+                estilo_celda_bold
             ),
             Paragraph(
                 fecha_reg,
-                estilo_celda,
+                estilo_celda
             ),
             Paragraph(
                 "",
-                estilo_celda,
+                estilo_celda
             ),
             Paragraph(
                 "",
-                estilo_celda,
+                estilo_celda
             ),
         ],
     ]
@@ -778,32 +1044,43 @@ def exportar_pdf_solicitud_equipo(request, id):
                     (0, 0),
                     (-1, -1),
                     0.5,
-                    colors.HexColor("#CCCCCC"),
+                    colors.HexColor(
+                        "#CCCCCC"
+                    ),
                 ),
+
                 (
                     "BACKGROUND",
                     (0, 0),
                     (0, -1),
-                    colors.HexColor("#F2F2F2"),
+                    colors.HexColor(
+                        "#F2F2F2"
+                    ),
                 ),
+
                 (
                     "BACKGROUND",
                     (2, 0),
                     (2, -1),
-                    colors.HexColor("#F2F2F2"),
+                    colors.HexColor(
+                        "#F2F2F2"
+                    ),
                 ),
+
                 (
                     "VALIGN",
                     (0, 0),
                     (-1, -1),
                     "MIDDLE",
                 ),
+
                 (
                     "TOPPADDING",
                     (0, 0),
                     (-1, -1),
                     6,
                 ),
+
                 (
                     "BOTTOMPADDING",
                     (0, 0),
@@ -819,7 +1096,10 @@ def exportar_pdf_solicitud_equipo(request, id):
     )
 
     elementos.append(
-        Spacer(1, 20)
+        Spacer(
+            1,
+            20
+        )
     )
 
     estilo_pie = ParagraphStyle(
@@ -838,28 +1118,90 @@ def exportar_pdf_solicitud_equipo(request, id):
         )
     )
 
-    doc.build(elementos)
+    doc.build(
+        elementos
+    )
 
     return response
 
 
-def aprobar_solicitud_equipo(request, id):
+# ============================================================
+# APROBAR
+# ============================================================
+
+@transaction.atomic
+def aprobar_solicitud_equipo(
+    request,
+    id
+):
 
     if not puede_editar_solicitudes(
         request.user
     ):
+
         return HttpResponseForbidden(
             "Acceso denegado."
         )
 
     solicitud = get_object_or_404(
         SolicitudEquipo,
-        id=id,
+        id=id
     )
 
-    solicitud.estado = "Aprobada"
-    solicitud.save()
+    # Si ya está aprobada no volvemos a descontar.
+    if solicitud.estado == "Aprobada":
 
+        messages.warning(
+            request,
+            "Esta solicitud ya se encuentra aprobada."
+        )
+
+        return redirect(
+            "lista_solicitudes_equipos"
+        )
+
+    # No se puede aprobar una solicitud devuelta
+    # o rechazada directamente sin crear una nueva
+    # operación.
+    if solicitud.estado not in [
+        "Pendiente"
+    ]:
+
+        messages.error(
+            request,
+            "Esta solicitud no puede ser aprobada "
+            f"porque actualmente está '{solicitud.estado}'."
+        )
+
+        return redirect(
+            "lista_solicitudes_equipos"
+        )
+
+    resultado = descontar_inventario(
+        solicitud
+    )
+
+    if not resultado:
+
+        messages.error(
+            request,
+            "No hay suficiente stock disponible "
+            "para aprobar esta solicitud."
+        )
+
+        return redirect(
+            "lista_solicitudes_equipos"
+        )
+
+    solicitud.estado = "Aprobada"
+
+    solicitud.save(
+        update_fields=[
+            "estado"
+        ]
+    )
+
+    # Notificación al estudiante.
     estudiante_user = User.objects.filter(
         Q(
             username__iexact=str(
@@ -879,17 +1221,30 @@ def aprobar_solicitud_equipo(request, id):
 
         enviar_notificacion_y_correo(
             usuario=estudiante_user,
-            titulo="Solicitud de Equipo: Aprobada 💻",
+            titulo=(
+                "Solicitud de Equipo: "
+                "Aprobada 💻"
+            ),
             mensaje=(
                 f"Tu solicitud para el equipo "
-                f"{solicitud.equipo} ha sido Aprobada."
+                f"{solicitud.equipo} "
+                f"ha sido Aprobada. "
+                f"Cantidad aprobada: "
+                f"{solicitud.cantidad}."
             ),
-            url_destino="/solicitudes-equipos/",
+            url_destino=(
+                "/solicitudes-equipos/"
+            )
         )
 
     messages.success(
         request,
-        f"La solicitud #{solicitud.id} ha sido APROBADA exitosamente.",
+        (
+            f"La solicitud #{solicitud.id} "
+            "ha sido APROBADA exitosamente. "
+            f"Se descontaron {solicitud.cantidad} "
+            "unidad(es) del inventario."
+        )
     )
 
     return redirect(
@@ -897,22 +1252,52 @@ def aprobar_solicitud_equipo(request, id):
     )
 
 
-def rechazar_solicitud_equipo(request, id):
+# ============================================================
+# RECHAZAR
+# ============================================================
+
+def rechazar_solicitud_equipo(
+    request,
+    id
+):
 
     if not puede_editar_solicitudes(
         request.user
     ):
+
         return HttpResponseForbidden(
             "Acceso denegado."
         )
 
     solicitud = get_object_or_404(
         SolicitudEquipo,
-        id=id,
+        id=id
     )
 
+    # Si ya estaba aprobada, no permitimos
+    # rechazarla porque ya representa un préstamo.
+    if solicitud.estado == "Aprobada":
+
+        messages.error(
+            request,
+            "Una solicitud aprobada no puede ser "
+            "rechazada. Debe registrarse como devuelta."
+        )
+
+        return redirect(
+            "lista_solicitudes_equipos"
+        )
+
     solicitud.estado = "Rechazada"
-    solicitud.save()
+
+    solicitud.inventario_descontado = False
+
+    solicitud.save(
+        update_fields=[
+            "estado",
+            "inventario_descontado",
+        ]
+    )
 
     estudiante_user = User.objects.filter(
         Q(
@@ -933,17 +1318,120 @@ def rechazar_solicitud_equipo(request, id):
 
         enviar_notificacion_y_correo(
             usuario=estudiante_user,
-            titulo="Solicitud de Equipo: Rechazada 💻",
+            titulo=(
+                "Solicitud de Equipo: "
+                "Rechazada 💻"
+            ),
             mensaje=(
                 f"Tu solicitud para el equipo "
-                f"{solicitud.equipo} ha sido Rechazada."
+                f"{solicitud.equipo} "
+                "ha sido Rechazada."
             ),
-            url_destino="/solicitudes-equipos/",
+            url_destino=(
+                "/solicitudes-equipos/"
+            )
         )
 
     messages.error(
         request,
-        f"La solicitud #{solicitud.id} ha sido RECHAZADA.",
+        (
+            f"La solicitud #{solicitud.id} "
+            "ha sido RECHAZADA."
+        )
+    )
+
+    return redirect(
+        "lista_solicitudes_equipos"
+    )
+
+
+# ============================================================
+# DEVOLVER
+# ============================================================
+
+@transaction.atomic
+def devolver_solicitud_equipo(
+    request,
+    id
+):
+
+    if not puede_editar_solicitudes(
+        request.user
+    ):
+
+        return HttpResponseForbidden(
+            "Acceso denegado."
+        )
+
+    solicitud = get_object_or_404(
+        SolicitudEquipo,
+        id=id
+    )
+
+    if solicitud.estado != "Aprobada":
+
+        messages.error(
+            request,
+            "Solo se puede devolver una solicitud "
+            "que se encuentre aprobada."
+        )
+
+        return redirect(
+            "lista_solicitudes_equipos"
+        )
+
+    devolver_inventario(
+        solicitud
+    )
+
+    solicitud.estado = "Devuelta"
+
+    solicitud.save(
+        update_fields=[
+            "estado"
+        ]
+    )
+
+    estudiante_user = User.objects.filter(
+        Q(
+            username__iexact=str(
+                solicitud.estudiante
+            )
+        )
+        |
+        Q(
+            perfil__rol__iexact="Estudiante",
+            first_name__icontains=str(
+                solicitud.estudiante
+            ),
+        )
+    ).first()
+
+    if estudiante_user:
+
+        enviar_notificacion_y_correo(
+            usuario=estudiante_user,
+            titulo=(
+                "Equipo devuelto correctamente 💻"
+            ),
+            mensaje=(
+                f"La devolución del equipo "
+                f"{solicitud.equipo} "
+                "ha sido registrada correctamente."
+            ),
+            url_destino=(
+                "/solicitudes-equipos/"
+            )
+        )
+
+    messages.success(
+        request,
+        (
+            f"La solicitud #{solicitud.id} "
+            "ha sido marcada como DEVUELTA. "
+            f"Se devolvieron {solicitud.cantidad} "
+            "unidad(es) al inventario."
+        )
     )
 
     return redirect(

@@ -36,22 +36,23 @@ class Inventario(models.Model):
         on_delete=models.CASCADE
     )
 
-    # Cantidad total registrada en esta sede
+    # Cantidad total registrada para este equipo
+    # en esta sede.
     cantidad = models.PositiveIntegerField(
         default=1
     )
 
-    # Cantidad actualmente prestada
+    # Cantidad actualmente prestada.
     cantidad_prestada = models.PositiveIntegerField(
         default=0
     )
 
-    # Cantidad actualmente en mantenimiento
+    # Cantidad actualmente en mantenimiento.
     cantidad_mantenimiento = models.PositiveIntegerField(
         default=0
     )
 
-    # Cantidad registrada como dañada
+    # Cantidad actualmente dañada.
     cantidad_danada = models.PositiveIntegerField(
         default=0
     )
@@ -70,7 +71,16 @@ class Inventario(models.Model):
     def cantidad_disponible(self):
         """
         Calcula automáticamente las unidades disponibles.
+
+        Ejemplo:
+        Total = 10
+        Prestadas = 1
+        Mantenimiento = 0
+        Dañadas = 0
+
+        Disponible = 9
         """
+
         disponible = (
             self.cantidad
             - self.cantidad_prestada
@@ -79,6 +89,27 @@ class Inventario(models.Model):
         )
 
         return max(disponible, 0)
+
+    def actualizar_estado(self):
+        """
+        Actualiza automáticamente el estado general
+        dependiendo de las cantidades actuales.
+        """
+
+        if self.cantidad_disponible > 0:
+            self.estado = "Disponible"
+
+        elif self.cantidad_prestada > 0:
+            self.estado = "Prestado"
+
+        elif self.cantidad_mantenimiento > 0:
+            self.estado = "Mantenimiento"
+
+        elif self.cantidad_danada > 0:
+            self.estado = "Dañado"
+
+        else:
+            self.estado = "Disponible"
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
