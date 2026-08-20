@@ -63,7 +63,16 @@ def enviar_notificacion_y_correo(
                 connection=conexion,
             )
 
-            correo.send(fail_silently=True)
+            resultado = correo.send(fail_silently=True)
+
+            # ==================================================
+            # INFORMACIÓN TEMPORAL PARA REVISAR RENDER
+            # ==================================================
+            print("==========================================")
+            print("PRUEBA DE CORREO SMTP")
+            print(f"Destinatario: {usuario.email}")
+            print(f"Resultado send(): {resultado}")
+            print("==========================================")
 
         except Exception as e:
             print("==========================================")
