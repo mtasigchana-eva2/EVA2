@@ -1,4 +1,4 @@
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage, get_connection
 from django.conf import settings
 from .models import Notificacion
 
@@ -45,25 +45,25 @@ def enviar_notificacion_y_correo(
     if usuario.email:
 
         try:
-            send_mail(
+            conexion = get_connection(
+                backend="django.core.mail.backends.smtp.EmailBackend",
+                fail_silently=True,
+                timeout=5,
+            )
+
+            correo = EmailMessage(
                 subject=f"[EVA2] {titulo}",
-                message=mensaje,
+                body=mensaje,
                 from_email=getattr(
                     settings,
                     "DEFAULT_FROM_EMAIL",
                     None
                 ),
-                recipient_list=[usuario.email],
-
-                # IMPORTANTE:
-                # Si el servidor SMTP falla, Django no debe
-                # lanzar la excepción hacia la solicitud principal.
-                fail_silently=True,
-
-                # Timeout corto para evitar que Render
-                # bloquee el worker esperando a Gmail.
-                timeout=5,
+                to=[usuario.email],
+                connection=conexion,
             )
+
+            correo.send(fail_silently=True)
 
         except Exception as e:
             print("==========================================")
