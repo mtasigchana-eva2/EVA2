@@ -15,23 +15,27 @@ from reportlab.platypus import (
     Paragraph,
     Spacer,
     Table,
-    TableStyle
+    TableStyle,
 )
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.styles import (
+    getSampleStyleSheet,
+    ParagraphStyle,
+)
 
 from notificaciones.utils import enviar_notificacion_y_correo
 from .models import Solicitud
 from .forms import SolicitudForm
 from usuarios.permisos import (
     puede_aprobar_solicitudes,
-    puede_editar_solicitudes
+    puede_editar_solicitudes,
 )
 
 
 def normalizar_texto(val):
     """
-    Convierte cualquier objeto o texto a una cadena limpia sin tildes
-    ni caracteres especiales para evitar errores de codificación en el PDF.
+    Convierte cualquier objeto o texto a una cadena limpia
+    sin tildes ni caracteres especiales para evitar errores
+    de codificación en el PDF.
     """
 
     if val is None:
@@ -55,22 +59,53 @@ def normalizar_texto(val):
     reemplazos = {
         "º": ".",
         "°": ".",
-        "ª": "."
+        "ª": ".",
     }
 
     for orig, reemp in reemplazos.items():
-        texto_sin_tildes = texto_sin_tildes.replace(orig, reemp)
+        texto_sin_tildes = texto_sin_tildes.replace(
+            orig,
+            reemp
+        )
 
     return texto_sin_tildes
 
 
-# ==========================================================
-# LISTA DE SOLICITUDES
-# ==========================================================
-
 def lista_solicitudes(request):
+    """
+    Lista de solicitudes de laboratorio.
 
-    solicitudes = Solicitud.objects.all().order_by("-id")
+    Los roles administrativos y docentes mantienen acceso
+    a todas las solicitudes.
+
+    El estudiante solamente puede visualizar
+    sus propias solicitudes.
+    """
+
+    usuario = request.user
+    perfil = getattr(usuario, "perfil", None)
+    rol = perfil.rol if perfil else None
+
+    # Roles que mantienen acceso completo
+    roles_acceso_total = [
+        "Superadministrador",
+        "Administrador Talleres",
+        "Coordinador Talleres",
+        "Coordinador Carrera",
+        "Docente",
+    ]
+
+    if usuario.is_superuser or rol in roles_acceso_total:
+
+        solicitudes = Solicitud.objects.all().order_by("-id")
+
+    else:
+
+        # Estudiante:
+        # únicamente sus propias solicitudes.
+        solicitudes = Solicitud.objects.filter(
+            estudiante=usuario
+        ).order_by("-id")
 
     return render(
         request,
@@ -81,11 +116,14 @@ def lista_solicitudes(request):
     )
 
 
-# ==========================================================
-# NUEVA SOLICITUD DE LABORATORIO
-# ==========================================================
-
 def nueva_solicitud(request):
+    """
+    Permite crear una nueva solicitud de laboratorio.
+
+    El estudiante puede crear su solicitud.
+    El estudiante queda automáticamente asociado
+    al usuario actualmente autenticado.
+    """
 
     if request.method == "POST":
 
@@ -96,132 +134,105 @@ def nueva_solicitud(request):
 
         if formulario.is_valid():
 
-            # ----------------------------------------------
-            # GUARDAR SOLICITUD
-            # ----------------------------------------------
+            solicitud = formulario.save(
+                commit=False
+            )
 
-            solicitud = formulario.save(commit=False)
-
-            # El estudiante es el usuario que está conectado
+            # El estudiante siempre será el usuario
+            # autenticado.
             solicitud.estudiante = request.user
+
+            # El estudiante no puede establecer
+            # manualmente el estado.
+            solicitud.estado = "Pendiente"
 
             solicitud.save()
 
-            # ----------------------------------------------
-            # NOTIFICACIONES
-            # ----------------------------------------------
-            #
-            # IMPORTANTE:
-            # Si el correo o la notificación falla, NO debe
-            # impedir que la solicitud se cree correctamente.
-            # ----------------------------------------------
+            destinatarios = []
 
-            try:
+            # Buscar docente seleccionado
+            if hasattr(solicitud, "docente") and solicitud.docente:
 
-                destinatarios = []
+                user_doc = User.objects.filter(
+                    Q(
+                        username__iexact=str(
+                            solicitud.docente
+                        )
+                    )
+                    |
+                    Q(
+                        first_name__icontains=str(
+                            solicitud.docente
+                        )
+                    )
+                ).first()
 
-                # Buscar primero al docente indicado
-                if hasattr(solicitud, "docente") and solicitud.docente:
+                if user_doc:
+                    destinatarios.append(
+                        user_doc
+                    )
 
-                    user_doc = User.objects.filter(
+            # Si no se encontró docente,
+            # notificar a los responsables.
+            if not destinatarios:
+
+                destinatarios = list(
+                    User.objects.filter(
                         Q(
-                            username__iexact=str(
-                                solicitud.docente
-                            )
+                            perfil__rol__iexact="Docente"
                         )
                         |
                         Q(
-                            first_name__icontains=str(
-                                solicitud.docente
-                            )
+                            perfil__rol__iexact="Administrador Talleres"
                         )
-                    ).first()
-
-                    if user_doc:
-                        destinatarios.append(user_doc)
-
-                # Si no encontramos docente específico,
-                # notificar a los responsables correspondientes.
-                if not destinatarios:
-
-                    destinatarios = list(
-                        User.objects.filter(
-                            Q(
-                                perfil__rol__iexact="Docente"
-                            )
-                            |
-                            Q(
-                                perfil__rol__iexact="Administrador Talleres"
-                            )
-                            |
-                            Q(
-                                perfil__rol__iexact="Coordinador Talleres"
-                            )
-                            |
-                            Q(
-                                perfil__rol__iexact="Coordinador Carrera"
-                            )
-                            |
-                            Q(
-                                perfil__rol__iexact="Superadministrador"
-                            )
-                            |
-                            Q(
-                                is_superuser=True
-                            )
-                        ).distinct()
-                    )
-
-                lab_nombre = getattr(
-                    solicitud,
-                    "laboratorio",
-                    "N/A"
+                        |
+                        Q(
+                            perfil__rol__iexact="Coordinador Talleres"
+                        )
+                        |
+                        Q(
+                            perfil__rol__iexact="Coordinador Carrera"
+                        )
+                        |
+                        Q(
+                            perfil__rol__iexact="Superadministrador"
+                        )
+                        |
+                        Q(
+                            is_superuser=True
+                        )
+                    ).distinct()
                 )
 
-                for usuario_destino in destinatarios:
+            lab_nombre = getattr(
+                solicitud,
+                "laboratorio",
+                "N/A"
+            )
 
-                    try:
+            # Enviar notificaciones
+            for usuario_destino in destinatarios:
 
-                        enviar_notificacion_y_correo(
-                            usuario=usuario_destino,
-                            titulo="Nueva Solicitud de Laboratorio 🔬",
-                            mensaje=(
-                                f"El estudiante "
-                                f"{request.user.get_full_name() or request.user.username} "
-                                f"ha solicitado el laboratorio "
-                                f"{lab_nombre}."
-                            ),
-                            url_destino="/solicitudes/"
-                        )
-
-                    except Exception as error_notificacion:
-
-                        # El error se muestra en los logs,
-                        # pero NO rompe la creación de la solicitud.
-                        print(
-                            "ERROR AL ENVIAR NOTIFICACIÓN/CORREO:",
-                            error_notificacion
-                        )
-
-            except Exception as error_general:
-
-                # Cualquier error relacionado con las
-                # notificaciones no impedirá continuar.
-                print(
-                    "ERROR GENERAL EN NOTIFICACIONES:",
-                    error_general
+                enviar_notificacion_y_correo(
+                    usuario=usuario_destino,
+                    titulo="Nueva Solicitud de Laboratorio 🔬",
+                    mensaje=(
+                        f"El estudiante "
+                        f"{request.user.get_full_name() or request.user.username} "
+                        f"ha solicitado el laboratorio "
+                        f"{lab_nombre}."
+                    ),
+                    url_destino="/solicitudes/",
                 )
-
-            # ----------------------------------------------
-            # MENSAJE Y REDIRECCIÓN
-            # ----------------------------------------------
 
             messages.success(
                 request,
                 "Solicitud registrada correctamente."
             )
 
-            return redirect("lista_solicitudes")
+            return redirect(
+                "lista_solicitudes"
+            )
 
     else:
 
@@ -236,17 +247,18 @@ def nueva_solicitud(request):
     )
 
 
-# ==========================================================
-# EDITAR SOLICITUD
-# ==========================================================
-
 def editar_solicitud(request, id):
+    """
+    Edición de solicitudes.
 
-    if not puede_editar_solicitudes(request.user):
+    Mantiene el sistema actual de permisos.
+    """
 
+    if not puede_editar_solicitudes(
+        request.user
+    ):
         return HttpResponseForbidden(
-            "Acceso denegado: Tu rol no tiene permisos "
-            "para editar solicitudes."
+            "Acceso denegado: Tu rol no tiene permisos para editar solicitudes."
         )
 
     solicitud = get_object_or_404(
@@ -286,22 +298,24 @@ def editar_solicitud(request, id):
         "solicitudes/nuevo.html",
         {
             "formulario": formulario,
-            "solicitud": solicitud
+            "solicitud": solicitud,
         }
     )
 
 
-# ==========================================================
-# APROBAR SOLICITUD
-# ==========================================================
-
 def aprobar_solicitud(request, id):
+    """
+    Aprueba una solicitud de laboratorio.
 
-    if not puede_aprobar_solicitudes(request.user):
+    Esta función solamente está disponible
+    para los roles autorizados.
+    """
 
+    if not puede_aprobar_solicitudes(
+        request.user
+    ):
         return HttpResponseForbidden(
-            "Acceso denegado: Tu rol no tiene permisos "
-            "para aprobar solicitudes."
+            "Acceso denegado: Tu rol no tiene permisos para aprobar solicitudes."
         )
 
     solicitud = get_object_or_404(
@@ -321,27 +335,17 @@ def aprobar_solicitud(request, id):
         "N/A"
     )
 
-    # La notificación tampoco debe impedir
-    # que la aprobación se complete.
-    try:
+    # Notificar al estudiante propietario
+    if solicitud.estudiante:
 
-        if solicitud.estudiante:
-
-            enviar_notificacion_y_correo(
-                usuario=solicitud.estudiante,
-                titulo="Solicitud de Laboratorio Aprobada ✅",
-                mensaje=(
-                    f"Tu solicitud para el laboratorio "
-                    f"{lab_nombre} ha sido APROBADA."
-                ),
-                url_destino="/solicitudes/"
-            )
-
-    except Exception as error:
-
-        print(
-            "ERROR AL NOTIFICAR APROBACIÓN:",
-            error
+        enviar_notificacion_y_correo(
+            usuario=solicitud.estudiante,
+            titulo="Solicitud de Laboratorio Aprobada ✅",
+            mensaje=(
+                f"Tu solicitud para el laboratorio "
+                f"{lab_nombre} ha sido APROBADA."
+            ),
+            url_destino="/solicitudes/",
         )
 
     messages.success(
@@ -354,17 +358,16 @@ def aprobar_solicitud(request, id):
     )
 
 
-# ==========================================================
-# RECHAZAR SOLICITUD
-# ==========================================================
-
 def rechazar_solicitud(request, id):
+    """
+    Rechaza una solicitud de laboratorio.
+    """
 
-    if not puede_aprobar_solicitudes(request.user):
-
+    if not puede_aprobar_solicitudes(
+        request.user
+    ):
         return HttpResponseForbidden(
-            "Acceso denegado: Tu rol no tiene permisos "
-            "para rechazar solicitudes."
+            "Acceso denegado: Tu rol no tiene permisos para rechazar solicitudes."
         )
 
     solicitud = get_object_or_404(
@@ -392,29 +395,20 @@ def rechazar_solicitud(request, id):
             "N/A"
         )
 
-        # La notificación no debe impedir
-        # que el rechazo se complete.
-        try:
+        # Notificar únicamente al estudiante
+        # propietario de la solicitud.
+        if solicitud.estudiante:
 
-            if solicitud.estudiante:
-
-                enviar_notificacion_y_correo(
-                    usuario=solicitud.estudiante,
-                    titulo="Solicitud de Laboratorio Rechazada ❌",
-                    mensaje=(
-                        f"Tu solicitud para el laboratorio "
-                        f"{lab_nombre} ha sido RECHAZADA. "
-                        f"Observación: "
-                        f"{solicitud.observacion or 'Sin observaciones'}."
-                    ),
-                    url_destino="/solicitudes/"
-                )
-
-        except Exception as error:
-
-            print(
-                "ERROR AL NOTIFICAR RECHAZO:",
-                error
+            enviar_notificacion_y_correo(
+                usuario=solicitud.estudiante,
+                titulo="Solicitud de Laboratorio Rechazada ❌",
+                mensaje=(
+                    f"Tu solicitud para el laboratorio "
+                    f"{lab_nombre} ha sido RECHAZADA. "
+                    f"Observación: "
+                    f"{solicitud.observacion or 'Sin observaciones'}."
+                ),
+                url_destino="/solicitudes/",
             )
 
         messages.success(
@@ -435,16 +429,44 @@ def rechazar_solicitud(request, id):
     )
 
 
-# ==========================================================
-# DETALLE DE SOLICITUD
-# ==========================================================
-
 def detalle_solicitud(request, id):
+    """
+    Muestra el detalle de una solicitud.
+
+    El estudiante solamente puede acceder
+    al detalle de una solicitud que le pertenece.
+
+    Los demás roles autorizados mantienen
+    acceso a cualquier solicitud.
+    """
 
     solicitud = get_object_or_404(
         Solicitud,
         id=id
     )
+
+    usuario = request.user
+    perfil = getattr(usuario, "perfil", None)
+    rol = perfil.rol if perfil else None
+
+    roles_acceso_total = [
+        "Superadministrador",
+        "Administrador Talleres",
+        "Coordinador Talleres",
+        "Coordinador Carrera",
+        "Docente",
+    ]
+
+    if not (
+        usuario.is_superuser
+        or rol in roles_acceso_total
+    ):
+
+        if solicitud.estudiante != usuario:
+
+            return HttpResponseForbidden(
+                "Acceso denegado: No puedes consultar solicitudes de otros estudiantes."
+            )
 
     return render(
         request,
@@ -455,16 +477,44 @@ def detalle_solicitud(request, id):
     )
 
 
-# ==========================================================
-# EXPORTAR PDF
-# ==========================================================
-
 def exportar_pdf_solicitud(request, id):
+    """
+    Genera el PDF de una solicitud de laboratorio.
+
+    El estudiante solamente puede descargar
+    el PDF de una solicitud propia.
+
+    Los demás roles autorizados mantienen
+    acceso a cualquier solicitud.
+    """
 
     solicitud = get_object_or_404(
         Solicitud,
         id=id
     )
+
+    usuario = request.user
+    perfil = getattr(usuario, "perfil", None)
+    rol = perfil.rol if perfil else None
+
+    roles_acceso_total = [
+        "Superadministrador",
+        "Administrador Talleres",
+        "Coordinador Talleres",
+        "Coordinador Carrera",
+        "Docente",
+    ]
+
+    if not (
+        usuario.is_superuser
+        or rol in roles_acceso_total
+    ):
+
+        if solicitud.estudiante != usuario:
+
+            return HttpResponseForbidden(
+                "Acceso denegado: No puedes descargar solicitudes de otros estudiantes."
+            )
 
     response = HttpResponse(
         content_type="application/pdf"
@@ -488,10 +538,7 @@ def exportar_pdf_solicitud(request, id):
 
     styles = getSampleStyleSheet()
 
-    # ----------------------------------------------
-    # ESTILOS
-    # ----------------------------------------------
-
+    # Estilo título institucional
     estilo_titulo_inst = ParagraphStyle(
         "TituloInst",
         parent=styles["Normal"],
@@ -501,6 +548,7 @@ def exportar_pdf_solicitud(request, id):
         textColor=colors.HexColor("#003366")
     )
 
+    # Estilo subtítulo institucional
     estilo_subtitulo_inst = ParagraphStyle(
         "SubTituloInst",
         parent=styles["Normal"],
@@ -510,6 +558,7 @@ def exportar_pdf_solicitud(request, id):
         textColor=colors.HexColor("#333333")
     )
 
+    # Título del documento
     estilo_titulo_doc = ParagraphStyle(
         "TituloDoc",
         parent=styles["Normal"],
@@ -520,6 +569,7 @@ def exportar_pdf_solicitud(request, id):
         spaceAfter=15
     )
 
+    # Texto normal de las celdas
     estilo_celda = ParagraphStyle(
         "Celda",
         parent=styles["Normal"],
@@ -528,6 +578,7 @@ def exportar_pdf_solicitud(request, id):
         leading=11
     )
 
+    # Texto en negrita de las celdas
     estilo_celda_bold = ParagraphStyle(
         "CeldaBold",
         parent=styles["Normal"],
@@ -538,10 +589,7 @@ def exportar_pdf_solicitud(request, id):
 
     elementos = []
 
-    # ----------------------------------------------
-    # ENCABEZADO
-    # ----------------------------------------------
-
+    # Encabezado institucional
     elementos.append(
         Paragraph(
             "INSTITUTO SUPERIOR TECNOLOGICO TECNOECUATORIANO",
@@ -567,10 +615,7 @@ def exportar_pdf_solicitud(request, id):
         )
     )
 
-    # ----------------------------------------------
-    # FECHA
-    # ----------------------------------------------
-
+    # Fecha
     fecha_sol = getattr(
         solicitud,
         "fecha",
@@ -579,14 +624,16 @@ def exportar_pdf_solicitud(request, id):
 
     f_fecha = (
         fecha_sol.strftime("%d/%m/%Y")
-        if hasattr(fecha_sol, "strftime")
-        else str(fecha_sol or "-")
+        if hasattr(
+            fecha_sol,
+            "strftime"
+        )
+        else str(
+            fecha_sol or "-"
+        )
     )
 
-    # ----------------------------------------------
-    # HORARIO
-    # ----------------------------------------------
-
+    # Horarios
     h_inicio = getattr(
         solicitud,
         "hora_inicio",
@@ -605,19 +652,17 @@ def exportar_pdf_solicitud(request, id):
         else "-"
     )
 
-    # ----------------------------------------------
-    # TABLA PRINCIPAL
-    # ----------------------------------------------
-
+    # Datos principales
     tabla_data = [
-
         [
             Paragraph(
                 "<b>N. Solicitud</b>",
                 estilo_celda_bold
             ),
             Paragraph(
-                normalizar_texto(solicitud.id),
+                normalizar_texto(
+                    solicitud.id
+                ),
                 estilo_celda
             ),
             Paragraph(
@@ -625,11 +670,12 @@ def exportar_pdf_solicitud(request, id):
                 estilo_celda_bold
             ),
             Paragraph(
-                normalizar_texto(solicitud.estado),
+                normalizar_texto(
+                    solicitud.estado
+                ),
                 estilo_celda
             )
         ],
-
         [
             Paragraph(
                 "<b>Estudiante</b>",
@@ -656,7 +702,6 @@ def exportar_pdf_solicitud(request, id):
                 estilo_celda
             )
         ],
-
         [
             Paragraph(
                 "<b>Laboratorio</b>",
@@ -687,7 +732,6 @@ def exportar_pdf_solicitud(request, id):
                 estilo_celda
             )
         ],
-
         [
             Paragraph(
                 "<b>Docente</b>",
@@ -712,7 +756,6 @@ def exportar_pdf_solicitud(request, id):
                 estilo_celda
             )
         ],
-
         [
             Paragraph(
                 "<b>Horario</b>",
@@ -732,7 +775,7 @@ def exportar_pdf_solicitud(request, id):
                 "",
                 estilo_celda
             )
-        ]
+        ],
     ]
 
     t_principal = Table(
@@ -747,7 +790,6 @@ def exportar_pdf_solicitud(request, id):
 
     t_principal.setStyle(
         TableStyle([
-
             (
                 "GRID",
                 (0, 0),
@@ -755,41 +797,36 @@ def exportar_pdf_solicitud(request, id):
                 0.5,
                 colors.HexColor("#CCCCCC")
             ),
-
             (
                 "BACKGROUND",
                 (0, 0),
                 (0, -1),
                 colors.HexColor("#F2F2F2")
             ),
-
             (
                 "BACKGROUND",
                 (2, 0),
                 (2, -1),
                 colors.HexColor("#F2F2F2")
             ),
-
             (
                 "VALIGN",
                 (0, 0),
                 (-1, -1),
                 "MIDDLE"
             ),
-
             (
                 "TOPPADDING",
                 (0, 0),
                 (-1, -1),
                 6
             ),
-
             (
                 "BOTTOMPADDING",
                 (0, 0),
                 (-1, -1),
                 6
-            )
+            ),
         ])
     )
 
@@ -801,31 +838,32 @@ def exportar_pdf_solicitud(request, id):
         Spacer(1, 15)
     )
 
-    # ----------------------------------------------
-    # MOTIVO Y OBSERVACIONES
-    # ----------------------------------------------
+    # Motivo y observaciones
+    motivo_texto = (
+        getattr(
+            solicitud,
+            "motivo",
+            ""
+        )
+        or "Sin motivo especificado."
+    )
 
-    motivo_texto = getattr(
-        solicitud,
-        "motivo",
-        ""
-    ) or "Sin motivo especificado."
-
-    obs_texto = getattr(
-        solicitud,
-        "observacion",
-        ""
-    ) or "Ninguna"
+    obs_texto = (
+        getattr(
+            solicitud,
+            "observacion",
+            ""
+        )
+        or "Ninguna"
+    )
 
     tabla_motivo_data = [
-
         [
             Paragraph(
                 "<b>MOTIVO DE LA SOLICITUD</b>",
                 estilo_celda_bold
             )
         ],
-
         [
             Paragraph(
                 normalizar_texto(
@@ -834,14 +872,12 @@ def exportar_pdf_solicitud(request, id):
                 estilo_celda
             )
         ],
-
         [
             Paragraph(
                 "<b>OBSERVACIONES / RESPUESTA</b>",
                 estilo_celda_bold
             )
         ],
-
         [
             Paragraph(
                 normalizar_texto(
@@ -859,7 +895,6 @@ def exportar_pdf_solicitud(request, id):
 
     t_motivo.setStyle(
         TableStyle([
-
             (
                 "GRID",
                 (0, 0),
@@ -867,34 +902,30 @@ def exportar_pdf_solicitud(request, id):
                 0.5,
                 colors.HexColor("#CCCCCC")
             ),
-
             (
                 "BACKGROUND",
                 (0, 0),
                 (-1, 0),
                 colors.HexColor("#E6EEF8")
             ),
-
             (
                 "BACKGROUND",
                 (0, 2),
                 (-1, 2),
                 colors.HexColor("#E6EEF8")
             ),
-
             (
                 "TOPPADDING",
                 (0, 0),
                 (-1, -1),
                 6
             ),
-
             (
                 "BOTTOMPADDING",
                 (0, 0),
                 (-1, -1),
                 6
-            )
+            ),
         ])
     )
 
@@ -906,10 +937,7 @@ def exportar_pdf_solicitud(request, id):
         Spacer(1, 20)
     )
 
-    # ----------------------------------------------
-    # PIE DE PÁGINA
-    # ----------------------------------------------
-
+    # Pie de página
     estilo_pie = ParagraphStyle(
         "Pie",
         parent=styles["Normal"],
@@ -921,15 +949,10 @@ def exportar_pdf_solicitud(request, id):
 
     elementos.append(
         Paragraph(
-            "Documento generado automaticamente por "
-            "el Sistema Institucional EVA2.",
+            "Documento generado automaticamente por el Sistema Institucional EVA2.",
             estilo_pie
         )
     )
-
-    # ----------------------------------------------
-    # GENERAR PDF
-    # ----------------------------------------------
 
     doc.build(
         elementos

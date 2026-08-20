@@ -1,7 +1,8 @@
 import unicodedata
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -9,7 +10,13 @@ from django.db.models import Q
 # ReportLab para generar el PDF en tabla estructurada
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle,
+)
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
 from notificaciones.utils import enviar_notificacion_y_correo
@@ -19,187 +26,518 @@ from .forms import PermisoForm
 
 def normalizar_texto(val):
     """
-    Convierte cualquier objeto o texto a una cadena limpia sin tildes ni caracteres
-    especiales que corrompan el PDF de ReportLab.
+    Convierte cualquier objeto o texto a una cadena limpia sin tildes
+    ni caracteres especiales que corrompan el PDF de ReportLab.
     """
     if val is None:
         return "-"
-    
-    # Si es un objeto de Django (User, etc.), extraemos su nombre real
-    if hasattr(val, 'get_full_name') and callable(val.get_full_name):
-        val = val.get_full_name() or getattr(val, 'username', str(val))
-    
+
+    if hasattr(val, "get_full_name") and callable(val.get_full_name):
+        val = val.get_full_name() or getattr(
+            val,
+            "username",
+            str(val),
+        )
+
     texto = str(val)
-    # Elimina tildes y acentos convirtiendo caracteres especiales a ASCII puro
-    texto_sin_tildes = ''.join(
-        c for c in unicodedata.normalize('NFD', texto)
-        if unicodedata.category(c) != 'Mn'
+
+    texto_sin_tildes = "".join(
+        c
+        for c in unicodedata.normalize(
+            "NFD",
+            texto,
+        )
+        if unicodedata.category(c) != "Mn"
     )
-    
-    # Limpieza final de caracteres extraños que causan cuadros negros
-    reemplazos = {'º': '.', '°': '.', 'ª': '.'}
+
+    reemplazos = {
+        "º": ".",
+        "°": ".",
+        "ª": ".",
+    }
+
     for orig, reemp in reemplazos.items():
-        texto_sin_tildes = texto_sin_tildes.replace(orig, reemp)
-        
+        texto_sin_tildes = texto_sin_tildes.replace(
+            orig,
+            reemp,
+        )
+
     return texto_sin_tildes
+
+
+def usuario_es_estudiante(user):
+    """
+    Solamente el rol Estudiante recibe la restricción.
+    Los demás roles conservan la lógica actual.
+    """
+    if user.is_superuser:
+        return False
+
+    perfil = getattr(
+        user,
+        "perfil",
+        None,
+    )
+
+    if not perfil:
+        return False
+
+    return perfil.rol == "Estudiante"
+
+
+def estudiante_puede_ver_permiso(
+    user,
+    permiso,
+):
+    """
+    El modelo Permiso guarda estudiante como CharField.
+
+    Se compara únicamente con:
+    - username
+    - nombre completo
+
+    No se utiliza solamente el nombre porque podría provocar
+    coincidencias entre estudiantes diferentes.
+    """
+    if not usuario_es_estudiante(user):
+        return True
+
+    valores_permitidos = {
+        user.username.strip().casefold(),
+    }
+
+    nombre_completo = user.get_full_name().strip()
+
+    if nombre_completo:
+        valores_permitidos.add(
+            nombre_completo.casefold()
+        )
+
+    estudiante_guardado = str(
+        permiso.estudiante
+    ).strip().casefold()
+
+    return estudiante_guardado in valores_permitidos
+
+
+def obtener_permiso_permitido(
+    request,
+    id,
+):
+    permiso = get_object_or_404(
+        Permiso,
+        id=id,
+    )
+
+    if not estudiante_puede_ver_permiso(
+        request.user,
+        permiso,
+    ):
+        return None
+
+    return permiso
 
 
 @login_required
 def lista_permisos(request):
+
     usuario = request.user
-    
-    # Obtenemos el perfil del usuario conectado (si existe)
-    perfil = getattr(usuario, 'perfil', None)
+
+    perfil = getattr(
+        usuario,
+        "perfil",
+        None,
+    )
+
     rol = perfil.rol if perfil else None
 
-    # 1. ROLES ADMINISTRATIVOS Y SUPERADMINISTRADOR
-    # Ven absolutamente TODAS las solicitudes de todos los usuarios
-    if usuario.is_superuser or rol in [
-        "Superadministrador",
-        "Administrador Talleres",
-        "Coordinador Carrera",
-        "Coordinador Talleres",
-    ]:
-        permisos = Permiso.objects.all().order_by("-fecha_solicitud")
+    # ==========================================================
+    # ESTUDIANTE
+    # SOLO VE SUS PROPIAS SOLICITUDES
+    # ==========================================================
 
-    # 2. DOCENTE / PROFESOR
-    # Solo ve las solicitudes de su misma carrera
-    elif rol == "Docente":
-        carrera_docente = perfil.carrera.nombre if (perfil and perfil.carrera) else None
-        
-        if carrera_docente:
-            permisos = Permiso.objects.filter(
-                carrera__iexact=carrera_docente
-            ).order_by("-fecha_solicitud")
-        else:
-            permisos = Permiso.objects.none()
+    if rol == "Estudiante":
 
-    # 3. ESTUDIANTE (Y cualquier otro usuario)
-    # Solo ve sus propias solicitudes
-    else:
-        nombre_completo = usuario.get_full_name()
-        
-        filtros = Q(estudiante__iexact=usuario.username)
+        filtros = Q(
+            estudiante__iexact=
+            usuario.username
+        )
+
+        nombre_completo = (
+            usuario
+            .get_full_name()
+            .strip()
+        )
+
         if nombre_completo:
-            filtros |= Q(estudiante__iexact=nombre_completo)
-        if usuario.first_name:
-            filtros |= Q(estudiante__icontains=usuario.first_name)
 
-        permisos = Permiso.objects.filter(filtros).order_by("-fecha_solicitud")
+            filtros |= Q(
+                estudiante__iexact=
+                nombre_completo
+            )
+
+        permisos = (
+            Permiso.objects
+            .filter(filtros)
+            .order_by("-fecha_solicitud")
+        )
+
+    # ==========================================================
+    # SUPERADMINISTRADOR Y ADMINISTRATIVOS
+    # MANTIENEN ACCESO A TODAS
+    # ==========================================================
+
+    elif (
+        usuario.is_superuser
+        or rol in [
+            "Superadministrador",
+            "Administrador Talleres",
+            "Coordinador Carrera",
+            "Coordinador Talleres",
+        ]
+    ):
+
+        permisos = (
+            Permiso.objects
+            .all()
+            .order_by("-fecha_solicitud")
+        )
+
+    # ==========================================================
+    # DOCENTE
+    # SE MANTIENE LA LÓGICA ACTUAL POR CARRERA
+    # ==========================================================
+
+    elif rol == "Docente":
+
+        carrera_docente = (
+            perfil.carrera.nombre
+            if (
+                perfil
+                and perfil.carrera
+            )
+            else None
+        )
+
+        if carrera_docente:
+
+            permisos = (
+                Permiso.objects
+                .filter(
+                    carrera__iexact=
+                    carrera_docente
+                )
+                .order_by(
+                    "-fecha_solicitud"
+                )
+            )
+
+        else:
+
+            permisos = (
+                Permiso.objects.none()
+            )
+
+    # ==========================================================
+    # CUALQUIER OTRO ROL
+    # SE MANTIENE EL COMPORTAMIENTO EXISTENTE
+    # ==========================================================
+
+    else:
+
+        permisos = (
+            Permiso.objects
+            .all()
+            .order_by("-fecha_solicitud")
+        )
 
     return render(
         request,
         "permisos/index.html",
-        {"permisos": permisos}
+        {
+            "permisos": permisos
+        },
     )
 
 
 @login_required
 def nuevo_permiso(request):
+
     if request.method == "POST":
-        formulario = PermisoForm(request.POST, request.FILES)
+
+        formulario = PermisoForm(
+            request.POST,
+            request.FILES,
+        )
+
         if formulario.is_valid():
-            permiso = formulario.save(commit=False)
-            
-            if not request.user.is_superuser and (not hasattr(request.user, 'perfil') or request.user.perfil.rol == 'Estudiante'):
+
+            permiso = formulario.save(
+                commit=False
+            )
+
+            if (
+                not request.user.is_superuser
+                and (
+                    not hasattr(
+                        request.user,
+                        "perfil",
+                    )
+                    or request.user.perfil.rol
+                    == "Estudiante"
+                )
+            ):
                 permiso.estado = "Pendiente"
+
             elif not permiso.estado:
                 permiso.estado = "Pendiente"
-                
+
             permiso.save()
 
             destinatarios = []
-            
-            if hasattr(permiso, 'docente') and permiso.docente:
-                if isinstance(permiso.docente, User):
-                    destinatarios.append(permiso.docente)
+
+            if (
+                hasattr(
+                    permiso,
+                    "docente",
+                )
+                and permiso.docente
+            ):
+
+                if isinstance(
+                    permiso.docente,
+                    User,
+                ):
+
+                    destinatarios.append(
+                        permiso.docente
+                    )
+
                 else:
+
                     user_doc = User.objects.filter(
-                        Q(username__iexact=str(permiso.docente)) |
-                        Q(first_name__icontains=str(permiso.docente))
+                        Q(
+                            username__iexact=
+                            str(permiso.docente)
+                        )
+                        |
+                        Q(
+                            first_name__icontains=
+                            str(permiso.docente)
+                        )
                     ).first()
+
                     if user_doc:
-                        destinatarios.append(user_doc)
+                        destinatarios.append(
+                            user_doc
+                        )
 
             if not destinatarios:
-                destinatarios = list(User.objects.filter(
-                    Q(perfil__rol__iexact='Docente') |
-                    Q(perfil__rol__iexact='Administrador Talleres') |
-                    Q(perfil__rol__iexact='Coordinador Talleres') |
-                    Q(perfil__rol__iexact='Coordinador Carrera') |
-                    Q(perfil__rol__iexact='Superadministrador') |
-                    Q(is_superuser=True)
-                ).distinct())
+
+                destinatarios = list(
+                    User.objects.filter(
+                        Q(
+                            perfil__rol__iexact=
+                            "Docente"
+                        )
+                        |
+                        Q(
+                            perfil__rol__iexact=
+                            "Administrador Talleres"
+                        )
+                        |
+                        Q(
+                            perfil__rol__iexact=
+                            "Coordinador Talleres"
+                        )
+                        |
+                        Q(
+                            perfil__rol__iexact=
+                            "Coordinador Carrera"
+                        )
+                        |
+                        Q(
+                            perfil__rol__iexact=
+                            "Superadministrador"
+                        )
+                        |
+                        Q(
+                            is_superuser=True
+                        )
+                    ).distinct()
+                )
 
             for destinatario in destinatarios:
+
                 enviar_notificacion_y_correo(
                     usuario=destinatario,
                     titulo="Nueva Solicitud de Permiso 📜",
-                    mensaje=f"El estudiante {permiso.estudiante} ha registrado una nueva solicitud de permiso.",
-                    url_destino="/permisos/"
+                    mensaje=(
+                        f"El estudiante "
+                        f"{permiso.estudiante} "
+                        f"ha registrado una "
+                        f"nueva solicitud de permiso."
+                    ),
+                    url_destino="/permisos/",
                 )
 
-            messages.success(request, "Solicitud registrada correctamente.")
-            return redirect("lista_permisos")
+            messages.success(
+                request,
+                "Solicitud registrada correctamente.",
+            )
+
+            return redirect(
+                "lista_permisos"
+            )
+
     else:
+
         formulario = PermisoForm()
 
     return render(
         request,
         "permisos/nuevo.html",
-        {"formulario": formulario}
+        {
+            "formulario": formulario
+        },
     )
 
 
 @login_required
 def editar_permiso(request, id):
-    permiso = get_object_or_404(Permiso, id=id)
+
+    permiso = get_object_or_404(
+        Permiso,
+        id=id,
+    )
 
     if request.method == "POST":
-        formulario = PermisoForm(request.POST, request.FILES, instance=permiso)
-        if formulario.is_valid():
-            permiso_previo_estado = permiso.estado
-            permiso_actualizado = formulario.save()
 
-            if permiso_previo_estado != permiso_actualizado.estado:
+        formulario = PermisoForm(
+            request.POST,
+            request.FILES,
+            instance=permiso,
+        )
+
+        if formulario.is_valid():
+
+            permiso_previo_estado = (
+                permiso.estado
+            )
+
+            permiso_actualizado = (
+                formulario.save()
+            )
+
+            if (
+                permiso_previo_estado
+                != permiso_actualizado.estado
+            ):
+
                 estudiante_user = User.objects.filter(
-                    Q(username__iexact=str(permiso_actualizado.estudiante)) |
-                    Q(perfil__rol__iexact='Estudiante', first_name__icontains=str(permiso_actualizado.estudiante))
+                    Q(
+                        username__iexact=
+                        str(
+                            permiso_actualizado.estudiante
+                        )
+                    )
+                    |
+                    Q(
+                        perfil__rol__iexact=
+                        "Estudiante",
+                        first_name__icontains=
+                        str(
+                            permiso_actualizado.estudiante
+                        ),
+                    )
                 ).first()
+
                 if estudiante_user:
+
                     enviar_notificacion_y_correo(
                         usuario=estudiante_user,
-                        titulo=f"Solicitud de Permiso: {permiso_actualizado.estado} 📜",
-                        mensaje=f"Tu solicitud de permiso ha cambiado al estado: {permiso_actualizado.estado}.",
-                        url_destino="/permisos/"
+                        titulo=(
+                            "Solicitud de Permiso: "
+                            f"{permiso_actualizado.estado} 📜"
+                        ),
+                        mensaje=(
+                            "Tu solicitud de permiso "
+                            "ha cambiado al estado: "
+                            f"{permiso_actualizado.estado}."
+                        ),
+                        url_destino="/permisos/",
                     )
 
-            messages.success(request, "Solicitud actualizada correctamente.")
-            return redirect("lista_permisos")
+            messages.success(
+                request,
+                "Solicitud actualizada correctamente.",
+            )
+
+            return redirect(
+                "lista_permisos"
+            )
+
     else:
-        formulario = PermisoForm(instance=permiso)
+
+        formulario = PermisoForm(
+            instance=permiso
+        )
 
     return render(
         request,
         "permisos/nuevo.html",
-        {"formulario": formulario}
+        {
+            "formulario": formulario
+        },
     )
 
 
 @login_required
 def eliminar_permiso(request, id):
-    permiso = get_object_or_404(Permiso, id=id)
+
+    permiso = get_object_or_404(
+        Permiso,
+        id=id,
+    )
+
     permiso.delete()
-    messages.success(request, "Solicitud eliminada correctamente.")
-    return redirect("lista_permisos")
+
+    messages.success(
+        request,
+        "Solicitud eliminada correctamente.",
+    )
+
+    return redirect(
+        "lista_permisos"
+    )
 
 
 @login_required
-def exportar_pdf_permiso(request, id):
-    permiso = get_object_or_404(Permiso, id=id)
+def exportar_pdf_permiso(
+    request,
+    id,
+):
 
-    response = HttpResponse(content_type="application/pdf")
-    response["Content-Disposition"] = f'attachment; filename="Solicitud_Permiso_{permiso.id}.pdf"'
+    permiso = obtener_permiso_permitido(
+        request,
+        id,
+    )
+
+    if permiso is None:
+        return HttpResponseForbidden(
+            "Acceso denegado: Un estudiante solamente puede descargar sus propias solicitudes."
+        )
+
+    response = HttpResponse(
+        content_type="application/pdf"
+    )
+
+    response[
+        "Content-Disposition"
+    ] = (
+        f'attachment; '
+        f'filename="Solicitud_Permiso_{permiso.id}.pdf"'
+    )
 
     doc = SimpleDocTemplate(
         response,
@@ -207,27 +545,27 @@ def exportar_pdf_permiso(request, id):
         rightMargin=36,
         leftMargin=36,
         topMargin=36,
-        bottomMargin=36
+        bottomMargin=36,
     )
 
     styles = getSampleStyleSheet()
-    
+
     estilo_titulo_inst = ParagraphStyle(
         "TituloInst",
         parent=styles["Normal"],
         fontName="Helvetica-Bold",
         fontSize=12,
         alignment=1,
-        textColor=colors.HexColor("#003366")
+        textColor=colors.HexColor("#003366"),
     )
-    
+
     estilo_subtitulo_inst = ParagraphStyle(
         "SubTituloInst",
         parent=styles["Normal"],
         fontName="Helvetica-Bold",
         fontSize=10,
         alignment=1,
-        textColor=colors.HexColor("#333333")
+        textColor=colors.HexColor("#333333"),
     )
 
     estilo_titulo_doc = ParagraphStyle(
@@ -237,7 +575,7 @@ def exportar_pdf_permiso(request, id):
         fontSize=13,
         alignment=1,
         textColor=colors.HexColor("#003366"),
-        spaceAfter=15
+        spaceAfter=15,
     )
 
     estilo_celda = ParagraphStyle(
@@ -245,7 +583,7 @@ def exportar_pdf_permiso(request, id):
         parent=styles["Normal"],
         fontName="Helvetica",
         fontSize=9,
-        leading=11
+        leading=11,
     )
 
     estilo_celda_bold = ParagraphStyle(
@@ -253,78 +591,289 @@ def exportar_pdf_permiso(request, id):
         parent=styles["Normal"],
         fontName="Helvetica-Bold",
         fontSize=9,
-        leading=11
+        leading=11,
     )
 
     elementos = []
 
-    # Encabezado Institucional
-    elementos.append(Paragraph("INSTITUTO SUPERIOR TECNOLOGICO TECNOECUATORIANO", estilo_titulo_inst))
-    elementos.append(Paragraph("SISTEMA INSTITUCIONAL SEMGA", estilo_subtitulo_inst))
-    elementos.append(Spacer(1, 10))
-    elementos.append(Paragraph("SOLICITUD DE PERMISO", estilo_titulo_doc))
+    elementos.append(
+        Paragraph(
+            "INSTITUTO SUPERIOR TECNOLOGICO TECNOECUATORIANO",
+            estilo_titulo_inst,
+        )
+    )
 
-    # Formateo de fechas
-    f_inicio = permiso.fecha_inicio.strftime("%d/%m/%Y") if getattr(permiso, 'fecha_inicio', None) else "-"
-    f_fin = permiso.fecha_fin.strftime("%d/%m/%Y") if getattr(permiso, 'fecha_fin', None) else "-"
+    elementos.append(
+        Paragraph(
+            "SISTEMA INSTITUCIONAL SEMGA",
+            estilo_subtitulo_inst,
+        )
+    )
 
-    # Matriz con normalización de caracteres
+    elementos.append(
+        Spacer(1, 10)
+    )
+
+    elementos.append(
+        Paragraph(
+            "SOLICITUD DE PERMISO",
+            estilo_titulo_doc,
+        )
+    )
+
+    f_inicio = (
+        permiso.fecha_inicio.strftime(
+            "%d/%m/%Y"
+        )
+        if getattr(
+            permiso,
+            "fecha_inicio",
+            None,
+        )
+        else "-"
+    )
+
+    f_fin = (
+        permiso.fecha_fin.strftime(
+            "%d/%m/%Y"
+        )
+        if getattr(
+            permiso,
+            "fecha_fin",
+            None,
+        )
+        else "-"
+    )
+
     tabla_data = [
         [
-            Paragraph("<b>N. Solicitud</b>", estilo_celda_bold),
-            Paragraph(normalizar_texto(permiso.id), estilo_celda),
-            Paragraph("<b>Estado</b>", estilo_celda_bold),
-            Paragraph(normalizar_texto(permiso.estado), estilo_celda)
+            Paragraph(
+                "<b>N. Solicitud</b>",
+                estilo_celda_bold,
+            ),
+            Paragraph(
+                normalizar_texto(
+                    permiso.id
+                ),
+                estilo_celda,
+            ),
+            Paragraph(
+                "<b>Estado</b>",
+                estilo_celda_bold,
+            ),
+            Paragraph(
+                normalizar_texto(
+                    permiso.estado
+                ),
+                estilo_celda,
+            ),
         ],
         [
-            Paragraph("<b>Estudiante</b>", estilo_celda_bold),
-            Paragraph(normalizar_texto(permiso.estudiante), estilo_celda),
-            Paragraph("<b>Carrera</b>", estilo_celda_bold),
-            Paragraph(normalizar_texto(getattr(permiso, 'carrera', 'N/A')), estilo_celda)
+            Paragraph(
+                "<b>Estudiante</b>",
+                estilo_celda_bold,
+            ),
+            Paragraph(
+                normalizar_texto(
+                    permiso.estudiante
+                ),
+                estilo_celda,
+            ),
+            Paragraph(
+                "<b>Carrera</b>",
+                estilo_celda_bold,
+            ),
+            Paragraph(
+                normalizar_texto(
+                    getattr(
+                        permiso,
+                        "carrera",
+                        "N/A",
+                    )
+                ),
+                estilo_celda,
+            ),
         ],
         [
-            Paragraph("<b>Docente</b>", estilo_celda_bold),
-            Paragraph(normalizar_texto(getattr(permiso, 'docente', 'N/A')), estilo_celda),
-            Paragraph("<b>Fecha Inicio</b>", estilo_celda_bold),
-            Paragraph(f_inicio, estilo_celda)
+            Paragraph(
+                "<b>Docente</b>",
+                estilo_celda_bold,
+            ),
+            Paragraph(
+                normalizar_texto(
+                    getattr(
+                        permiso,
+                        "docente",
+                        "N/A",
+                    )
+                ),
+                estilo_celda,
+            ),
+            Paragraph(
+                "<b>Fecha Inicio</b>",
+                estilo_celda_bold,
+            ),
+            Paragraph(
+                f_inicio,
+                estilo_celda,
+            ),
         ],
         [
-            Paragraph("<b>Fecha Fin</b>", estilo_celda_bold),
-            Paragraph(f_fin, estilo_celda),
-            Paragraph("", estilo_celda),
-            Paragraph("", estilo_celda)
+            Paragraph(
+                "<b>Fecha Fin</b>",
+                estilo_celda_bold,
+            ),
+            Paragraph(
+                f_fin,
+                estilo_celda,
+            ),
+            Paragraph(
+                "",
+                estilo_celda,
+            ),
+            Paragraph(
+                "",
+                estilo_celda,
+            ),
         ],
     ]
 
-    t_principal = Table(tabla_data, colWidths=[110, 160, 110, 160])
-    t_principal.setStyle(TableStyle([
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#CCCCCC")),
-        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor("#F2F2F2")),
-        ('BACKGROUND', (2, 0), (2, -1), colors.HexColor("#F2F2F2")),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-    ]))
-    elementos.append(t_principal)
-    elementos.append(Spacer(1, 15))
+    t_principal = Table(
+        tabla_data,
+        colWidths=[
+            110,
+            160,
+            110,
+            160,
+        ],
+    )
 
-    # Sección Motivo
-    motivo_texto = getattr(permiso, 'motivo', None) or getattr(permiso, 'descripcion', 'Sin motivo especificado.')
-    
+    t_principal.setStyle(
+        TableStyle(
+            [
+                (
+                    "GRID",
+                    (0, 0),
+                    (-1, -1),
+                    0.5,
+                    colors.HexColor("#CCCCCC"),
+                ),
+                (
+                    "BACKGROUND",
+                    (0, 0),
+                    (0, -1),
+                    colors.HexColor("#F2F2F2"),
+                ),
+                (
+                    "BACKGROUND",
+                    (2, 0),
+                    (2, -1),
+                    colors.HexColor("#F2F2F2"),
+                ),
+                (
+                    "VALIGN",
+                    (0, 0),
+                    (-1, -1),
+                    "MIDDLE",
+                ),
+                (
+                    "TOPPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    6,
+                ),
+                (
+                    "BOTTOMPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    6,
+                ),
+            ]
+        )
+    )
+
+    elementos.append(
+        t_principal
+    )
+
+    elementos.append(
+        Spacer(1, 15)
+    )
+
+    motivo_texto = (
+        getattr(
+            permiso,
+            "motivo",
+            None,
+        )
+        or getattr(
+            permiso,
+            "descripcion",
+            "Sin motivo especificado.",
+        )
+    )
+
     tabla_motivo_data = [
-        [Paragraph("<b>MOTIVO DE LA SOLICITUD</b>", estilo_celda_bold)],
-        [Paragraph(normalizar_texto(motivo_texto), estilo_celda)]
+        [
+            Paragraph(
+                "<b>MOTIVO DE LA SOLICITUD</b>",
+                estilo_celda_bold,
+            )
+        ],
+        [
+            Paragraph(
+                normalizar_texto(
+                    motivo_texto
+                ),
+                estilo_celda,
+            )
+        ],
     ]
-    
-    t_motivo = Table(tabla_motivo_data, colWidths=[540])
-    t_motivo.setStyle(TableStyle([
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#CCCCCC")),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#E6EEF8")),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-    ]))
-    elementos.append(t_motivo)
-    elementos.append(Spacer(1, 20))
+
+    t_motivo = Table(
+        tabla_motivo_data,
+        colWidths=[540],
+    )
+
+    t_motivo.setStyle(
+        TableStyle(
+            [
+                (
+                    "GRID",
+                    (0, 0),
+                    (-1, -1),
+                    0.5,
+                    colors.HexColor("#CCCCCC"),
+                ),
+                (
+                    "BACKGROUND",
+                    (0, 0),
+                    (-1, 0),
+                    colors.HexColor("#E6EEF8"),
+                ),
+                (
+                    "TOPPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    6,
+                ),
+                (
+                    "BOTTOMPADDING",
+                    (0, 0),
+                    (-1, -1),
+                    6,
+                ),
+            ]
+        )
+    )
+
+    elementos.append(
+        t_motivo
+    )
+
+    elementos.append(
+        Spacer(1, 20)
+    )
 
     estilo_pie = ParagraphStyle(
         "Pie",
@@ -332,9 +881,16 @@ def exportar_pdf_permiso(request, id):
         fontName="Helvetica-Oblique",
         fontSize=8,
         alignment=1,
-        textColor=colors.gray
+        textColor=colors.gray,
     )
-    elementos.append(Paragraph("Documento generado automaticamente por el Sistema Institucional SEMGA.", estilo_pie))
+
+    elementos.append(
+        Paragraph(
+            "Documento generado automaticamente por el Sistema Institucional SEMGA.",
+            estilo_pie,
+        )
+    )
 
     doc.build(elementos)
+
     return response
