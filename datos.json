@@ -222,7 +222,7 @@
   "pk": 1,
   "fields": {
     "codigo": "MEc",
-    "nombre": "Mec├ínica Automotriz",
+    "nombre": "Mecanica Automotriz",
     "descripcion": "",
     "estado": true,
     "fecha_creacion": "2026-08-07T08:18:16.027Z"
@@ -256,7 +256,7 @@
   "fields": {
     "nombre": "Pifo",
     "ciudad": "Quito",
-    "direccion": "Calle Jambel├¡ OE3-158 y la Uni├│n",
+    "direccion": "Calle Jambeli OE3-158 y la Union",
     "telefono": "0",
     "estado": true
   }
@@ -348,7 +348,7 @@
     "carrera": 1,
     "sede": 2,
     "laboratorio": "",
-    "docente": "Ing. Sebasti├ín",
+    "docente": "Ing. Sebastian",
     "fecha": "2026-08-10",
     "hora_inicio": "08:59:00",
     "hora_fin": "12:30:00",
@@ -378,8 +378,8 @@
   "pk": 1,
   "fields": {
     "estudiante": "MARIO PABLO TASIGCHANA MENDOZA",
-    "carrera": "Mec├ínica Automotriz",
-    "docente": "Ing. Sebasti├ín",
+    "carrera": "Mecanica Automotriz",
+    "docente": "Ing. Sebastian",
     "fecha_inicio": "2026-08-06",
     "fecha_fin": "2026-08-07",
     "motivo": "Examenes",
@@ -408,8 +408,8 @@
   "pk": 3,
   "fields": {
     "estudiante": "MARIO PABLO TASIGCHANA MENDOZA",
-    "carrera": "Mec├ínica Automotriz",
-    "docente": "Ing. Sebasti├ín",
+    "carrera": "Mecanica Automotriz",
+    "docente": "Ing. Sebastian",
     "fecha_inicio": "2026-08-11",
     "fecha_fin": "2026-08-14",
     "motivo": "Laborales",
@@ -423,8 +423,8 @@
   "pk": 4,
   "fields": {
     "estudiante": "PABLO MENDOZA",
-    "carrera": "Mec├ínica Automotriz",
-    "docente": "Ing. Sebasti├ín",
+    "carrera": "Mecanica Automotriz",
+    "docente": "Ing. Sebastian",
     "fecha_inicio": "2026-08-10",
     "fecha_fin": "2026-08-10",
     "motivo": "Tengo cambio de horario laboral",
@@ -438,7 +438,7 @@
   "pk": 1,
   "fields": {
     "estudiante": "MARIO PABLO TASIGCHANA MENDOZA",
-    "carrera": "Mec├ínica Automotriz",
+    "carrera": "Mecanica Automotriz",
     "profesor": "Ing.Sebastian",
     "herramienta": 1,
     "cantidad": 1,
