@@ -157,3 +157,51 @@ def perfil(request):
             "perfil_incompleto": perfil_incompleto,
         }
     )
+
+
+# ==========================================
+# ACCESO TEMPORAL ESTUDIANTE - TESIS
+# ==========================================
+def demo_estudiante(request):
+    usuario = User.objects.filter(
+        username="Xavierleon2026"
+    ).first()
+
+    if usuario is None:
+        messages.error(
+            request,
+            "La cuenta de demostración de estudiante no existe."
+        )
+        return redirect("login")
+
+    login(
+        request,
+        usuario,
+        backend="django.contrib.auth.backends.ModelBackend"
+    )
+
+    return redirect("dashboard")
+
+
+# ==========================================
+# ACCESO TEMPORAL SUPERADMINISTRADOR - TESIS
+# ==========================================
+def demo_superadministrador(request):
+    usuario = User.objects.filter(
+        username="Carla2026"
+    ).first()
+
+    if usuario is None:
+        messages.error(
+            request,
+            "La cuenta de demostración de Superadministrador no existe."
+        )
+        return redirect("login")
+
+    login(
+        request,
+        usuario,
+        backend="django.contrib.auth.backends.ModelBackend"
+    )
+
+    return redirect("dashboard")

@@ -11,4 +11,20 @@ urlpatterns = [
     path("registro/", views.registro, name="registro"),
 
     path("perfil/", views.perfil, name="perfil"),
+
+    # ==========================================
+    # ACCESOS TEMPORALES PARA DEMOSTRACIÓN TESIS
+    # ==========================================
+
+    path(
+        "demo/TESIS-XAVIER-2026-8K4M/",
+        views.demo_estudiante,
+        name="demo_estudiante"
+    ),
+
+    path(
+        "demo/TESIS-CARLA-2026-9P7Q/",
+        views.demo_superadministrador,
+        name="demo_superadministrador"
+    ),
 ]
