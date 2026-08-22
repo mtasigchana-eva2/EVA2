@@ -84,13 +84,62 @@ def login_view(request):
 @login_required(login_url="login")
 def dashboard(request):
 
+    # ==========================================
+    # OBTENER PERFIL Y ROL DEL USUARIO
+    # ==========================================
+
+    perfil_obj, _ = Perfil.objects.get_or_create(
+        usuario=request.user
+    )
+
+    rol = perfil_obj.rol
+
+    # ==========================================
+    # DEFINICIÓN DE ROLES
+    # ==========================================
+
+    es_estudiante = rol == "Estudiante"
+    es_docente = rol == "Docente"
+    es_coord_carrera = rol == "Coordinador Carrera"
+    es_coord_talleres = rol == "Coordinador Talleres"
+    es_admin_talleres = rol == "Administrador Talleres"
+    es_superadmin = (
+        request.user.is_superuser
+        or rol == "Superadministrador"
+    )
+
+    # ==========================================
+    # ÚLTIMAS SOLICITUDES
+    #
+    # Los estudiantes NO deben recibir esta
+    # información.
+    # ==========================================
+
+    ultimas = None
+
+    if not es_estudiante:
+        ultimas = SolicitudEquipo.objects.order_by("-id")[:5]
+
+    # ==========================================
+    # CONTEXTO DEL DASHBOARD
+    # ==========================================
+
     contexto = {
         "total_carreras": Carrera.objects.count(),
         "total_sedes": Sede.objects.count(),
         "total_inventario": Inventario.objects.count(),
         "total_herramientas": Herramienta.objects.count(),
         "total_solicitudes": SolicitudEquipo.objects.count(),
-        "ultimas": SolicitudEquipo.objects.order_by("-id")[:5],
+
+        "ultimas": ultimas,
+
+        # Roles
+        "es_estudiante": es_estudiante,
+        "es_docente": es_docente,
+        "es_coord_carrera": es_coord_carrera,
+        "es_coord_talleres": es_coord_talleres,
+        "es_admin_talleres": es_admin_talleres,
+        "es_superadmin": es_superadmin,
     }
 
     return render(

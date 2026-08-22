@@ -8,175 +8,398 @@
         Sistema SEMGA - Panel Principal
     </h2>
 
-    <!-- Métricas del Sistema -->
+
+    <!-- ========================================== -->
+    <!-- MÉTRICAS DEL SISTEMA -->
+    <!-- ========================================== -->
+
     <div class="row">
 
-        <!-- CARRERAS (Coordinadores, Admin Talleres y Superadmin) -->
+        <!-- CARRERAS -->
         {% if es_coord_carrera or es_coord_talleres or es_admin_talleres or es_superadmin %}
+
         <div class="col-md-4 mb-3">
+
             <div class="card border-primary shadow">
+
                 <div class="card-body text-center">
+
                     <h5>🎓 Carreras</h5>
-                    <h1 class="fw-bold">{{ total_carreras }}</h1>
+
+                    <h1 class="fw-bold">
+                        {{ total_carreras }}
+                    </h1>
+
                 </div>
+
             </div>
+
         </div>
+
         {% endif %}
 
-        <!-- SEDES (Coordinadores, Admin Talleres y Superadmin) -->
+
+        <!-- SEDES -->
         {% if es_coord_carrera or es_coord_talleres or es_admin_talleres or es_superadmin %}
+
         <div class="col-md-4 mb-3">
+
             <div class="card border-success shadow">
+
                 <div class="card-body text-center">
+
                     <h5>🏢 Sedes</h5>
-                    <h1 class="fw-bold">{{ total_sedes }}</h1>
+
+                    <h1 class="fw-bold">
+                        {{ total_sedes }}
+                    </h1>
+
                 </div>
+
             </div>
+
         </div>
+
         {% endif %}
 
-        <!-- INVENTARIO (Docentes, Coordinadores, Admin Talleres y Superadmin) -->
+
+        <!-- INVENTARIO -->
         {% if es_docente or es_coord_carrera or es_coord_talleres or es_admin_talleres or es_superadmin %}
+
         <div class="col-md-4 mb-3">
+
             <div class="card border-info shadow">
+
                 <div class="card-body text-center">
+
                     <h5>📦 Inventario</h5>
-                    <h1 class="fw-bold">{{ total_inventario }}</h1>
+
+                    <h1 class="fw-bold">
+                        {{ total_inventario }}
+                    </h1>
+
                 </div>
+
             </div>
+
         </div>
+
         {% endif %}
 
-        <!-- HERRAMIENTAS (Docentes, Coordinadores, Admin Talleres y Superadmin) -->
+
+        <!-- HERRAMIENTAS -->
         {% if es_docente or es_coord_carrera or es_coord_talleres or es_admin_talleres or es_superadmin %}
+
         <div class="col-md-4 mb-3">
+
             <div class="card border-danger shadow">
+
                 <div class="card-body text-center">
+
                     <h5>🔧 Herramientas</h5>
-                    <h1 class="fw-bold">{{ total_herramientas }}</h1>
+
+                    <h1 class="fw-bold">
+                        {{ total_herramientas }}
+                    </h1>
+
                 </div>
+
             </div>
+
         </div>
+
         {% endif %}
 
-        <!-- SOLICITUDES (Visible para todos los roles) -->
+
+        <!-- SOLICITUDES -->
         <div class="col-md-4 mb-3">
+
             <div class="card border-dark shadow">
+
                 <div class="card-body text-center">
+
                     <h5>📝 Solicitudes</h5>
-                    <h1 class="fw-bold">{{ total_solicitudes }}</h1>
+
+                    <h1 class="fw-bold">
+                        {{ total_solicitudes }}
+                    </h1>
+
                 </div>
+
             </div>
+
         </div>
 
     </div>
 
-    <!-- Módulos / Accesos Rápidos -->
-    <h3 class="mt-4 mb-3">Accesos Rápidos</h3>
+
+    <!-- ========================================== -->
+    <!-- ACCESOS RÁPIDOS -->
+    <!-- ========================================== -->
+
+    <h3 class="mt-4 mb-3">
+        Accesos Rápidos
+    </h3>
+
 
     <div class="row">
 
-        <!-- PERMISOS (Todos los usuarios) -->
+
+        <!-- PERMISOS -->
         <div class="col-md-3 mb-4">
+
             <div class="card shadow text-center h-100">
+
                 <div class="card-body d-flex flex-column justify-content-between">
+
                     <div>
-                        <h1 class="display-4">📄</h1>
-                        <h5>Permisos</h5>
+
+                        <h1 class="display-4">
+                            📄
+                        </h1>
+
+                        <h5>
+                            Permisos
+                        </h5>
+
                         <p class="text-muted small">
                             Solicitudes de permiso estudiantil.
                         </p>
+
                     </div>
-                    <a href="{% url 'lista_permisos' %}" class="btn btn-danger w-100">
+
+                    <a
+                        href="{% url 'lista_permisos' %}"
+                        class="btn btn-danger w-100"
+                    >
                         Ingresar
                     </a>
+
                 </div>
+
             </div>
+
         </div>
 
-        <!-- SOLICITUDES (Todos los usuarios) -->
+
+        <!-- SOLICITUDES -->
         <div class="col-md-3 mb-4">
+
             <div class="card shadow text-center h-100">
+
                 <div class="card-body d-flex flex-column justify-content-between">
+
                     <div>
-                        <h1 class="display-4">📝</h1>
-                        <h5>Solicitudes</h5>
-                        <p class="text-muted small">Registrar y gestionar peticiones.</p>
+
+                        <h1 class="display-4">
+                            📝
+                        </h1>
+
+                        <h5>
+                            Solicitudes
+                        </h5>
+
+                        <p class="text-muted small">
+                            Registrar y gestionar peticiones.
+                        </p>
+
                     </div>
-                    <a href="{% url 'nueva_solicitud' %}" class="btn btn-primary w-100">Ingresar</a>
+
+                    <a
+                        href="{% url 'nueva_solicitud' %}"
+                        class="btn btn-primary w-100"
+                    >
+                        Ingresar
+                    </a>
+
                 </div>
+
             </div>
+
         </div>
 
-        <!-- HERRAMIENTAS (Docentes, Coordinadores, Admin Talleres y Superadmin) -->
+
+        <!-- HERRAMIENTAS -->
         {% if es_docente or es_coord_carrera or es_coord_talleres or es_admin_talleres or es_superadmin %}
+
         <div class="col-md-3 mb-4">
+
             <div class="card shadow text-center h-100">
+
                 <div class="card-body d-flex flex-column justify-content-between">
+
                     <div>
-                        <h1 class="display-4">🔧</h1>
-                        <h5>Herramientas</h5>
-                        <p class="text-muted small">Solicitudes de insumos y equipos.</p>
+
+                        <h1 class="display-4">
+                            🔧
+                        </h1>
+
+                        <h5>
+                            Herramientas
+                        </h5>
+
+                        <p class="text-muted small">
+                            Solicitudes de insumos y equipos.
+                        </p>
+
                     </div>
-                    <a href="{% url 'lista_herramientas' %}" class="btn btn-warning w-100">Ingresar</a>
+
+                    <a
+                        href="{% url 'lista_herramientas' %}"
+                        class="btn btn-warning w-100"
+                    >
+                        Ingresar
+                    </a>
+
                 </div>
+
             </div>
+
         </div>
+
         {% endif %}
 
-        <!-- INVENTARIO (Docentes, Coordinadores, Admin Talleres y Superadmin) -->
+
+        <!-- INVENTARIO -->
         {% if es_docente or es_coord_carrera or es_coord_talleres or es_admin_talleres or es_superadmin %}
+
         <div class="col-md-3 mb-4">
+
             <div class="card shadow text-center h-100">
+
                 <div class="card-body d-flex flex-column justify-content-between">
+
                     <div>
-                        <h1 class="display-4">📦</h1>
-                        <h5>Inventario</h5>
-                        <p class="text-muted small">Administrar equipos y herramientas.</p>
+
+                        <h1 class="display-4">
+                            📦
+                        </h1>
+
+                        <h5>
+                            Inventario
+                        </h5>
+
+                        <p class="text-muted small">
+                            Administrar equipos y herramientas.
+                        </p>
+
                     </div>
-                    <a href="{% url 'lista_inventario' %}" class="btn btn-info text-white w-100">Ingresar</a>
+
+                    <a
+                        href="{% url 'lista_inventario' %}"
+                        class="btn btn-info text-white w-100"
+                    >
+                        Ingresar
+                    </a>
+
                 </div>
+
             </div>
+
         </div>
+
         {% endif %}
 
     </div>
 
+
+    <!-- ========================================== -->
+    <!-- ÚLTIMAS SOLICITUDES -->
+    <!-- SOLO PARA USUARIOS QUE NO SON ESTUDIANTES -->
+    <!-- ========================================== -->
+
+    {% if not es_estudiante %}
+
     <hr>
 
-    <h3 class="mb-3">Últimas solicitudes</h3>
+    <h3 class="mb-3">
+        Últimas solicitudes
+    </h3>
+
 
     <table class="table table-striped table-hover shadow-sm">
+
         <thead class="table-dark">
+
             <tr>
-                <th>Estudiante</th>
-                <th>Tipo</th>
-                <th>Estado</th>
-                <th>Fecha</th>
+
+                <th>
+                    Estudiante
+                </th>
+
+                <th>
+                    Tipo
+                </th>
+
+                <th>
+                    Estado
+                </th>
+
+                <th>
+                    Fecha
+                </th>
+
             </tr>
+
         </thead>
+
+
         <tbody>
+
             {% for s in ultimas %}
+
                 <tr>
-                    <td>{{ s.estudiante }}</td>
-                    <td>{{ s.tipo }}</td>
-                    <td>{{ s.estado }}</td>
-                    <td>{{ s.fecha }}</td>
+
+                    <td>
+                        {{ s.estudiante }}
+                    </td>
+
+                    <td>
+                        {{ s.tipo }}
+                    </td>
+
+                    <td>
+                        {{ s.estado }}
+                    </td>
+
+                    <td>
+                        {{ s.fecha }}
+                    </td>
+
                 </tr>
+
             {% empty %}
+
                 <tr>
-                    <td colspan="4" class="text-center text-muted">
+
+                    <td
+                        colspan="4"
+                        class="text-center text-muted"
+                    >
                         No existen solicitudes registradas.
                     </td>
+
                 </tr>
+
             {% endfor %}
+
         </tbody>
+
     </table>
+
+    {% endif %}
+
+
+    <!-- ========================================== -->
+    <!-- MENSAJE DE BIENVENIDA -->
+    <!-- ========================================== -->
 
     <hr>
 
     <div class="alert alert-success shadow-sm mt-4">
+
         Bienvenido al Sistema SEMGA del Instituto Superior Tecnológico Tecnoecuatoriano.
+
     </div>
 
 </div>
